@@ -95,8 +95,11 @@ export default function WorkCard({
         <div className="px-5 pt-4 pb-5">
           {/* title */}
           <h3
-            className="serif  leading-[1.15] tracking-[-0.01em] mb-2"
-            style={{ fontSize: "clamp(1.4rem, 1.9vw, 1.65rem)" }}
+            className="leading-[1.15] tracking-[-0.01em] mb-2"
+            style={{ 
+              fontSize: "clamp(1.4rem, 1.9vw, 1.65rem)",
+              fontFamily: '"Courier New", Courier, monospace'
+            }}
           >
             {work.title}
           </h3>
