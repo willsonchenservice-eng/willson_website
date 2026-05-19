@@ -6,6 +6,8 @@ import "@fontsource/instrument-serif/latin-400-italic.css";
 import "@fontsource/caveat/latin-400.css";
 import "@fontsource/caveat/latin-500.css";
 import "@fontsource/caveat/latin-600.css";
+import "@fontsource/ma-shan-zheng/chinese-simplified-400.css";
+import "@fontsource/ma-shan-zheng/latin-400.css";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import BackCover from "@/components/BackCover";

@@ -12,12 +12,14 @@ export default function Chapter({
   title,
   meta,
   arrow = true,
+  titleFontFamily,
 }: {
   index?: string;       // 'Ⅱ' or '02'
   kicker?: string;      // "Notebook"
   title: ReactNode;
   meta?: ReactNode;
   arrow?: boolean;
+  titleFontFamily?: string;
 }) {
   return (
     <header className="relative pt-12 pb-6">
@@ -41,7 +43,7 @@ export default function Chapter({
       <h1
         className="tracking-[-0.02em] leading-[0.95]"
         style={{
-          fontFamily: "var(--font-hand)",
+          fontFamily: titleFontFamily || "var(--font-hand)",
           fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
         }}
       >

@@ -34,7 +34,7 @@
   --color-hot-foreground: var(--red-pen-foreground);
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   --font-serif: "Instrument Serif", "Songti SC", "Source Han Serif SC", "Noto Serif SC", serif;
-  --font-hand: "Caveat", "Instrument Serif", "Songti SC", cursive;
+  --font-hand: "Caveat", "Ma Shan Zheng", "Instrument Serif", "Songti SC", cursive;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
