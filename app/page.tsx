@@ -156,13 +156,12 @@ export default function Home() {
           <section className="mt-[100px]">
             <HandDivider className="my-8" />
             <Chapter
-              kicker="In the Wild"
               title={<>自媒体</>}
               titleFontFamily='"Courier New", Courier, monospace'
               arrow={false}
               meta={
                 <span>
-                  长文之外的随手记录——一段视频、一张照片、几句话。
+                  通过视频记录自己的见闻、所思、所想
                 </span>
               }
             />
@@ -202,11 +201,7 @@ export default function Home() {
             />
             <div className="mt-5 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
               <p className="serif text-xl sm:text-2xl leading-snug max-w-xl">
-                目前只接一项：
-                <InkUnderline>
-                  <span className="">作品集 Review</span>
-                </InkUnderline>
-                。一对一来聊。
+                项目合作或作品集指导，欢迎私聊
               </p>
               <Link
                 href="/services"
