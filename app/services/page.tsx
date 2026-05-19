@@ -89,15 +89,14 @@ export default function Services() {
             
           </h2>
 
-          <p className="text-xl leading-relaxed text-muted mb-8 max-w-3xl">
+          <p className="text-xl leading-relaxed text-muted mb-8 w-full">
             {service.tagline}
           </p>
 
           <div className="pt-2 mb-6">
             <div>
               <div
-                className="mb-3 text-foreground/70"
-                style={{ fontFamily: "var(--font-hand)", fontSize: "1.3rem" }}
+                className="mb-3 text-muted text-xl leading-relaxed"
               >
                 你会拿到
               </div>
