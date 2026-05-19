@@ -80,7 +80,7 @@ export default function Services() {
           </div>
 
           <h2
-            className="serif italic leading-tight mb-4"
+            className="leading-tight mb-4"
             style={{
               fontSize: "clamp(2rem, 4.5vw, 3.25rem)",
               letterSpacing: "-0.01em",
@@ -90,7 +90,7 @@ export default function Services() {
             
           </h2>
 
-          <p className="serif italic text-xl leading-relaxed text-muted mb-8 max-w-3xl">
+          <p className="text-xl leading-relaxed text-muted mb-8 max-w-3xl">
             {service.tagline}
           </p>
 

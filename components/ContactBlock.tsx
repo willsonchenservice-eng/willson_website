@@ -46,8 +46,6 @@ export default function ContactBlock() {
                 fontFamily: "var(--font-hand)",
                 fontSize: "2.25rem",
                 color: "var(--foreground)",
-                transform: "rotate(-1deg)",
-                transformOrigin: "left",
                 display: "inline-block",
               }}
             >
