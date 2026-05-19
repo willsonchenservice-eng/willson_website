@@ -77,7 +77,7 @@ export default function Hero() {
               <div
                 className="leading-snug"
                 style={{
-                  fontFamily: '"Courier New", Courier, monospace',
+                  fontFamily: 'Helvetica, "Courier New", Courier, monospace',
                   fontSize: "1.5rem",
                   color: "var(--foreground)",
                 }}

@@ -32,10 +32,10 @@
   --color-sticky-pink: var(--sticky-pink);
   --color-hot: var(--red-pen);
   --color-hot-foreground: var(--red-pen-foreground);
-  --font-sans: "Courier New", Courier, monospace;
-  --font-serif: "Courier New", Courier, monospace;
+  --font-sans: Helvetica, "Courier New", Courier, monospace;
+  --font-serif: Helvetica, "Courier New", Courier, monospace;
   --font-hand: "Caveat", "Ma Shan Zheng", "Instrument Serif", "Songti SC", cursive;
-  --font-mono: "Courier New", Courier, monospace;
+  --font-mono: Helvetica, "Courier New", Courier, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -57,7 +57,7 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "Courier New", Courier, monospace;
+  font-family: Helvetica, "Courier New", Courier, monospace;
   font-size: 16px;
   line-height: 1.6;
   overflow-x: hidden;
@@ -117,7 +117,7 @@ body::before {
 
 /* font-family utilities */
 .serif {
-  font-family: "Courier New", Courier, monospace;
+  font-family: Helvetica, "Courier New", Courier, monospace;
 }
 .hand {
   font-family: var(--font-hand);
@@ -162,7 +162,7 @@ a {
   line-height: 1.8;
 }
 .prose-mdx h2 {
-  font-family: "Courier New", Courier, monospace;
+  font-family: Helvetica, "Courier New", Courier, monospace;
   font-size: 1.5rem;
   font-weight: 400;
   margin-top: 3rem;
@@ -204,7 +204,7 @@ a {
 .prose-journal { font-size: 1rem; line-height: 1.7; }
 .prose-journal p { margin: 0.85rem 0; }
 .prose-journal h2 {
-  font-family: "Courier New", Courier, monospace;
+  font-family: Helvetica, "Courier New", Courier, monospace;
   font-size: 1.25rem;
   font-weight: 400;
   margin-top: 2rem;
@@ -232,7 +232,7 @@ a {
   padding-left: 1rem;
   margin: 1.2rem 0;
   color: var(--muted);
-  font-family: "Courier New", Courier, monospace;
+  font-family: Helvetica, "Courier New", Courier, monospace;
   font-style: italic;
   font-size: 1.05rem;
   line-height: 1.7;

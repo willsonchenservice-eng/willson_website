@@ -36,7 +36,7 @@ export default function WorkIndex() {
             作品
           </>
         }
-        titleFontFamily='"Courier New", Courier, monospace'
+        titleFontFamily='Helvetica, "Courier New", Courier, monospace'
         arrow={false}
         meta={
           <span>

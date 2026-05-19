@@ -36,7 +36,7 @@ export default function Services() {
             作品集咨询或项目合作
           </>
         }
-        titleFontFamily='"Courier New", Courier, monospace'
+        titleFontFamily='Helvetica, "Courier New", Courier, monospace'
         arrow={false}
         meta={
           <span>

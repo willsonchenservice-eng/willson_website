@@ -45,7 +45,7 @@ export default function Chapter({
       <h1
         className="tracking-[-0.02em] leading-[0.95]"
         style={{
-          fontFamily: titleFontFamily || '"Courier New", Courier, monospace',
+          fontFamily: titleFontFamily || 'Helvetica, "Courier New", Courier, monospace',
           fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
           ...(titleLineHeight ? { lineHeight: titleLineHeight } : {}),
         }}
