@@ -55,7 +55,7 @@ export default function Home() {
 
       <div className="notebook-shell">
         {/* ── Selected Work ───────────────────────────── */}
-          <section className="mt-[100px]">
+          <section className="my-[200px]">
             <HandDivider className="my-8" />
             <Chapter
               title={
@@ -86,7 +86,7 @@ export default function Home() {
           </section>
 
         {/* ── Manifesto ───────────────────────────── */}
-          <section className="mt-[100px]">
+          <section className="my-[200px]">
             <HandDivider className="my-8" />
             <Chapter
               title={
@@ -125,7 +125,7 @@ export default function Home() {
           </section>
 
         {/* ── Latest from the Notebook ───────────────────────────── */}
-          <section className="mt-[100px]">
+          <section className="my-[200px]">
             <HandDivider className="my-8" />
             <Chapter
               title={<>Blog</>}
