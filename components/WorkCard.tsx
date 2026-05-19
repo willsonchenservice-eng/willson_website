@@ -47,22 +47,21 @@ export default function WorkCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 28 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{
-        duration: 0.6,
-        delay: index * 0.04,
-        ease: [0.22, 1, 0.36, 1],
-      }}
-      whileHover={{ y: -5 }}
-      style={{ transform: `rotate(${tilt}deg)` }}
-      className="relative will-change-transform"
-    >
+        initial={{ opacity: 0, y: 28 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{
+          duration: 0.6,
+          delay: index * 0.04,
+          ease: [0.22, 1, 0.36, 1],
+        }}
+        style={{ transform: `rotate(${tilt}deg)` }}
+        className="relative will-change-transform"
+      >
       <Link
         href={`/work/${work.slug}`}
         data-cursor-text="READ"
-        className="group relative block overflow-hidden rounded-2xl bg-white border-[8px] border-[var(--line)] shadow-[0_8px_22px_-12px_rgba(0,0,0,0.16)] hover:shadow-[0_22px_40px_-14px_rgba(0,0,0,0.26)] transition-all duration-500 ease-out"
+        className="group relative block overflow-hidden rounded-2xl bg-white border-[8px] border-[var(--line)] shadow-[0_8px_22px_-12px_rgba(0,0,0,0.16)] transition-all duration-500 ease-out"
       >
         {/* small piece of tape at top-left — peeks out of the corner */}
         <span
@@ -87,7 +86,7 @@ export default function WorkCard({
             alt={work.title}
             fill
             sizes="(min-width: 1024px) 360px, 100vw"
-            className="object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.03]"
+            className="object-cover transition-transform duration-[400ms] ease-out group-hover:scale-[1.08]"
             unoptimized
           />
         </div>
