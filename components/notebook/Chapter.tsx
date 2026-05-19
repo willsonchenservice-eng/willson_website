@@ -60,7 +60,7 @@ export default function Chapter({
           />
         )}
       </h1>
-      {meta && <div className="text-muted text-sm mt-3 max-w-xl">{meta}</div>}
+      {meta && <div className="text-muted text-sm mt-3 w-full">{meta}</div>}
     </header>
   );
 }
