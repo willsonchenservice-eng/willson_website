@@ -94,11 +94,6 @@ export default function WorkCard({
 
         {/* content */}
         <div className="px-5 pt-4 pb-5">
-          {/* eyebrow: primary tag + year */}
-          <div className="flex items-baseline justify-end gap-3 mb-2">
-            
-          </div>
-
           {/* title */}
           <h3
             className="serif  leading-[1.15] tracking-[-0.01em] mb-2"
@@ -111,21 +106,6 @@ export default function WorkCard({
           <p className="text-[0.86rem] text-muted leading-[1.55] line-clamp-2 mb-3">
             {work.summary}
           </p>
-
-          {/* sub-tags + corner doodle */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] uppercase tracking-[0.16em] text-muted">
-              {subTags.map((t) => (
-                <span key={t}>{t}</span>
-              ))}
-              {work.year && (
-                <span className="font-mono ml-auto">
-                  {String(work.year)}
-                </span>
-              )}
-            </div>
-            
-          </div>
         </div>
       </Link>
     </motion.div>
