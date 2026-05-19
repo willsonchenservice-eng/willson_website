@@ -55,7 +55,7 @@ export default function Home() {
 
       <div className="notebook-shell">
         {/* ── Selected Work ───────────────────────────── */}
-          <section>
+          <section className="mt-[100px]">
             <HandDivider className="my-8" />
             <Chapter
               title={
@@ -86,7 +86,7 @@ export default function Home() {
           </section>
 
         {/* ── Manifesto ───────────────────────────── */}
-          <section className="mt-12">
+          <section className="mt-[100px]">
             <HandDivider className="my-8" />
             <Chapter
               title={
@@ -125,7 +125,7 @@ export default function Home() {
           </section>
 
         {/* ── Latest from the Notebook ───────────────────────────── */}
-          <section className="mt-12">
+          <section className="mt-[100px]">
             <HandDivider className="my-8" />
             <Chapter
               title={<>Blog</>}
@@ -152,7 +152,7 @@ export default function Home() {
           </section>
 
         {/* ── On Xiaohongshu ───────────────────────────── */}
-          <section className="mt-12">
+          <section className="mt-[100px]">
             <HandDivider className="my-8" />
             <Chapter
               kicker="In the Wild"
@@ -188,7 +188,7 @@ export default function Home() {
           </section>
 
         {/* ── Services teaser ───────────────────────────── */}
-          <section className="mt-12 mb-4">
+          <section className="mt-[100px] mb-4">
             <HandDivider className="my-8" />
             <Chapter
               title={
