@@ -45,10 +45,10 @@ export default function Services() {
         }
       />
 
-      <HandDivider className="my-8" />
+
 
       {/* The order form — tilted, taped, paperclipped */}
-      <section className="mt-8 mb-12">
+      <section className="mt-[100px] mb-12">
         <div
           className="relative bg-white border border-line shadow-[0_18px_36px_-14px_rgba(0,0,0,0.18)]"
           style={{ transform: "rotate(-0.6deg)", padding: "2.25rem 2rem" }}
@@ -159,10 +159,10 @@ export default function Services() {
         </div>
       </section>
 
-      <HandDivider className="my-8" />
+
 
       {/* Flow */}
-      <section className="mt-8 mb-10">
+      <section className="mt-[100px] mb-10">
         <div className="mb-5 flex items-center gap-4 flex-wrap">
           <WashiTape color="mint" width="140px" rotate={-1.5} label="你可以这样" />
           
