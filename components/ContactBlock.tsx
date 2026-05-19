@@ -43,7 +43,7 @@ export default function ContactBlock() {
             <div
               className="leading-tight mb-3"
               style={{
-                fontFamily: "var(--font-hand)",
+                fontFamily: '"Courier New", Courier, monospace',
                 fontSize: "2.25rem",
                 color: "var(--foreground)",
                 display: "inline-block",
