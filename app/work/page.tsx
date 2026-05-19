@@ -5,10 +5,10 @@ import WashiTape from "@/components/notebook/WashiTape";
 
 export const metadata = { title: "Work" };
 
-const GROUP_ORDER = ["B 端工作", "独立项目"];
+const GROUP_ORDER = ["过往工作项目", "独立开发和其他作品"];
 const GROUP_COLOR: Record<string, "yellow" | "mint" | "pink"> = {
-  "B 端工作": "yellow",
-  "独立项目": "mint",
+  "过往工作项目": "yellow",
+  "独立开发和其他作品": "mint",
 };
 const GROUP_HINT: Record<string, string> = {
   "B 端工作": "在公司里做过的产品",
