@@ -63,7 +63,6 @@ export default function Home() {
                   作品
                 </>
               }
-              titleFontFamily='"Courier New", Courier, monospace'
               arrow={false}
               meta={
                 <span>
@@ -94,7 +93,6 @@ export default function Home() {
                   设计理念
                 </>
               }
-              titleFontFamily='"Lucida Console", Monaco, monospace'
               arrow={false}
             />
             <ul className="mt-6 grid sm:grid-cols-2 gap-x-10 gap-y-6">
@@ -129,7 +127,6 @@ export default function Home() {
             <HandDivider className="my-8" />
             <Chapter
               title={<>Blog</>}
-              titleFontFamily='"Comic Sans MS", cursive'
               titleLineHeight="100px"
               arrow={false}
               meta={
@@ -157,7 +154,6 @@ export default function Home() {
             <HandDivider className="my-8" />
             <Chapter
               title={<>自媒体</>}
-              titleFontFamily='"Courier New", Courier, monospace'
               arrow={false}
               meta={
                 <span>
@@ -196,7 +192,6 @@ export default function Home() {
                   想合作？
                 </>
               }
-              titleFontFamily='"Courier New", Courier, monospace'
               arrow={false}
             />
             <div className="mt-5 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
