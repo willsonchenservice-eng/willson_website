@@ -51,17 +51,17 @@ export default function ContactBlock() {
                 display: "inline-block",
               }}
             >
-              项目合作等其他合作也欢迎加我联系方式
+              扫码添加我的联系方式。
             </div>
             <p className="text-sm text-muted leading-relaxed">
-              作品集 Review、合作、聊聊设计——都欢迎邮件或微信。一般在 24 小时内回。
+              一般在 24 小时内回复
             </p>
             <div className="flex flex-wrap gap-x-7 gap-y-2 mt-5 text-base items-baseline">
               <a
                 href={`mailto:${site.email}`}
                 className="underline underline-offset-[5px] decoration-[var(--red-pen)] decoration-1 hover:decoration-2 transition"
               >
-                {site.email}
+                邮箱· {site.email}
               </a>
               <span className="text-muted text-sm">
                 微信 ·{" "}

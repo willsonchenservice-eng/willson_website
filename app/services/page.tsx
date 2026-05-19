@@ -10,7 +10,7 @@ import HandDivider from "@/components/notebook/HandDivider";
 export const metadata = { title: "Services" };
 
 const service = {
-  title: "作品集 Review",
+  title: "作品集咨询",
   tagline: "一对一，把你的作品集从「自我陈述」翻成「招聘方读得懂的故事」。",
   duration: "60 分钟",
   price: "¥¥",
@@ -34,7 +34,7 @@ export default function Services() {
       <Chapter
         title={
           <>
-            委托单
+            作品集咨询或项目合作
           </>
         }
         arrow={false}
