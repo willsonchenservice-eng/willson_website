@@ -60,13 +60,13 @@ export default function Home() {
             <Chapter
               title={
                 <>
-                  近作
+                  我的项目
                 </>
               }
               arrow={false}
               meta={
                 <span>
-                  挑出 3 个能聊清楚的项目。
+                  我最近在工作之中和工作之余做的一些项目
                   <Link
                     href="/work"
                     className="ml-1 underline underline-offset-[5px] decoration-[var(--red-pen)] decoration-1 hover:decoration-2 transition"
@@ -87,7 +87,15 @@ export default function Home() {
         {/* ── Manifesto ───────────────────────────── */}
           <section className="mt-12">
             <HandDivider className="my-8" />
-            <ul className="mt-2 grid sm:grid-cols-2 gap-x-10 gap-y-6">
+            <Chapter
+              title={
+                <>
+                  设计理念
+                </>
+              }
+              arrow={false}
+            />
+            <ul className="mt-6 grid sm:grid-cols-2 gap-x-10 gap-y-6">
               {BELIEFS.map((b, i) => (
                 <li
                   key={b.n}
@@ -118,11 +126,7 @@ export default function Home() {
           <section className="mt-12">
             <HandDivider className="my-8" />
             <Chapter
-              title={
-                <>
-                  近期 Blog
-                </>
-              }
+              title={<>Blog</>}
               arrow={false}
               meta={
                 <span>
@@ -149,11 +153,7 @@ export default function Home() {
             <HandDivider className="my-8" />
             <Chapter
               kicker="In the Wild"
-              title={
-                <>
-                  也在 <InkUnderline>小红书</InkUnderline>
-                </>
-              }
+              title={<>自媒体</>}
               arrow={false}
               meta={
                 <span>
@@ -163,7 +163,7 @@ export default function Home() {
             />
             <SocialEmbed
               platform="小红书"
-              videoMaxWidth={260}
+              videoMaxWidth={400}
               posts={[
                 {
                   src: "/wall/xhs-xinjiang.mp4",
