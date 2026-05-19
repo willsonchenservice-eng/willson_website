@@ -60,7 +60,7 @@ export default function Home() {
             <Chapter
               title={
                 <>
-                  我的项目
+                  作品
                 </>
               }
               titleFontFamily='"Courier New", Courier, monospace'
