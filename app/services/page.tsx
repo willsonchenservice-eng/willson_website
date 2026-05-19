@@ -11,10 +11,9 @@ export const metadata = { title: "Services" };
 
 const service = {
   title: "作品集咨询",
-  tagline: "一对一，把你的作品集从「自我陈述」翻成「招聘方读得懂的故事」。",
+  tagline: "一对一，把你的作品集从「自我陈述」翻成「招聘方读得懂的故事」。针对你的作品集做一次深度复盘：哪些项目值得写、写法怎么调、视觉怎么收。适合在准备跳槽、转岗或申请海外硕士的同学。",
   duration: "60 分钟",
   price: "¥¥",
-  desc: "针对你的作品集做一次深度复盘：哪些项目值得写、写法怎么调、视觉怎么收。适合在准备跳槽、转岗或申请海外硕士的同学。",
   deliver: [
     "一份逐项批注的 PDF",
     "一次 60 分钟视频沟通",
@@ -94,11 +93,7 @@ export default function Services() {
             {service.tagline}
           </p>
 
-          <div className="border-t border-line pt-6 mb-6">
-            <p className="text-base leading-relaxed text-foreground/85 mb-6">
-              {service.desc}
-            </p>
-
+          <div className="pt-2 mb-6">
             <div>
               <div
                 className="mb-3 text-foreground/70"
