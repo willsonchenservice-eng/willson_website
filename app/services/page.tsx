@@ -104,7 +104,7 @@ export default function Services() {
                 className="mb-3 text-foreground/70"
                 style={{ fontFamily: "var(--font-hand)", fontSize: "1.3rem" }}
               >
-                你会拿到 →
+                你会拿到
               </div>
               <ul className="space-y-2">
                 {service.deliver.map((d, i) => (
