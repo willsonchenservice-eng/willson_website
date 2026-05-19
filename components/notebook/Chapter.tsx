@@ -13,6 +13,7 @@ export default function Chapter({
   meta,
   arrow = true,
   titleFontFamily,
+  titleLineHeight,
 }: {
   index?: string;       // 'Ⅱ' or '02'
   kicker?: string;      // "Notebook"
@@ -20,6 +21,7 @@ export default function Chapter({
   meta?: ReactNode;
   arrow?: boolean;
   titleFontFamily?: string;
+  titleLineHeight?: string;
 }) {
   return (
     <header className="relative pt-12 pb-6">
@@ -45,6 +47,7 @@ export default function Chapter({
         style={{
           fontFamily: titleFontFamily || "var(--font-hand)",
           fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
+          ...(titleLineHeight ? { lineHeight: titleLineHeight } : {}),
         }}
       >
         {title}

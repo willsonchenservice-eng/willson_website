@@ -130,6 +130,7 @@ export default function Home() {
             <Chapter
               title={<>Blog</>}
               titleFontFamily='"Comic Sans MS", cursive'
+              titleLineHeight="100px"
               arrow={false}
               meta={
                 <span>
