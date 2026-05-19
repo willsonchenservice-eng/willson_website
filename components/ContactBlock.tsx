@@ -55,12 +55,20 @@ export default function ContactBlock() {
               一般在 24 小时内回复
             </p>
             <div className="flex flex-wrap gap-x-7 gap-y-2 mt-5 text-base items-baseline">
-              <a
-                href={`mailto:${site.email}`}
-                className="underline underline-offset-[5px] decoration-[var(--red-pen)] decoration-1 hover:decoration-2 transition"
-              >
-                邮箱· {site.email}
-              </a>
+              <span className="text-muted text-sm">
+                邮箱 ·{" "}
+                <a
+                  href={`mailto:${site.email}`}
+                  style={{
+                    fontFamily: "var(--font-hand)",
+                    fontSize: "1.15rem",
+                    color: "var(--foreground)",
+                  }}
+                  className="hover:text-[var(--red-pen)] transition-colors"
+                >
+                  {site.email}
+                </a>
+              </span>
               <span className="text-muted text-sm">
                 微信 ·{" "}
                 <span
