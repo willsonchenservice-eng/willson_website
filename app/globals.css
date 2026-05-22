@@ -117,7 +117,7 @@ body::before {
 
 /* font-family utilities */
 .serif {
-  font-family: Helvetica, "Courier New", Courier, monospace;
+  font-family: "Courier New", Courier, monospace;
 }
 .hand {
   font-family: var(--font-hand);
@@ -157,7 +157,7 @@ a {
 
 /* prose styles — kept */
 .prose-mdx {
-  max-width: 48rem;
+  max-width: 1120px;
   font-size: 1.0625rem;
   line-height: 1.8;
 }
@@ -224,9 +224,22 @@ a {
   text-underline-offset: 3px;
 }
 .prose-journal a:hover { text-decoration-thickness: 2px; }
-.prose-journal ul,
-.prose-journal ol { margin: 0.75rem 0; padding-left: 1.4rem; }
-.prose-journal li { margin: 0.2rem 0; }
+.prose-journal ul { 
+  margin: 0.75rem 0; 
+  padding-left: 1.5rem; 
+  list-style-type: disc; 
+  list-style-position: outside; 
+}
+.prose-journal ol { 
+  margin: 0.75rem 0; 
+  padding-left: 1.5rem; 
+  list-style-type: decimal; 
+  list-style-position: outside; 
+}
+.prose-journal li { 
+  margin: 0.2rem 0; 
+  display: list-item;
+}
 .prose-journal blockquote {
   border-left: 2px solid var(--red-pen);
   padding-left: 1rem;

@@ -39,3 +39,59 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# AI agent temp directories
+.adal/
+.agents/
+.aiden/
+.augment/
+.claude/
+.coco/
+.codebuddy/
+.codin/
+.commandcode/
+.continue/
+.cortex/
+.crush/
+.factory/
+.goose/
+.iflow/
+.junie/
+.kilocode/
+.kiro/
+.kode/
+.mcpjam/
+.mux/
+.neovate/
+.openhands/
+.pi/
+.pochi/
+.qoder/
+.qwen/
+.roo/
+.trae-cn/
+.trae/
+.vibe/
+.windsurf/
+.zencoder/
+
+# temp test files
+test-*.js
+log/
+
+# downloaded notion images (can be regenerated)
+public/notion-images/
+
+# large video files
+public/wall/xhs-xinjiang.mp4
+public/wall/xhs-hangzhou.mp4
+
+# project docs
+SOUL.md
+SPEC*.md
+WORKFLOW.md
+STAGE_*.md
+
+# skills
+skills/
+skills-lock.json

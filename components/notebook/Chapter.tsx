@@ -25,23 +25,7 @@ export default function Chapter({
 }) {
   return (
     <header className="relative pt-12 pb-6">
-      {(index || kicker) && (
-        <div className="flex items-baseline gap-3 mb-3">
-          {index && (
-            <span
-              className="text-[var(--red-pen)] tabular-nums text-sm tracking-[0.22em] font-mono"
-              style={{ letterSpacing: "0.22em" }}
-            >
-              Ch · {index}
-            </span>
-          )}
-          {kicker && (
-            <span className="text-muted uppercase tracking-[0.22em] text-xs">
-              {kicker}
-            </span>
-          )}
-        </div>
-      )}
+
       <h1
         className="tracking-[-0.02em] leading-[0.95]"
         style={{
@@ -60,7 +44,7 @@ export default function Chapter({
           />
         )}
       </h1>
-      {meta && <div className="text-muted text-sm mt-3 w-full">{meta}</div>}
+      {meta && <div className="text-muted text-sm mt-3 block w-full">{meta}</div>}
     </header>
   );
 }

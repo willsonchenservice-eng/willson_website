@@ -1,12 +1,12 @@
 import type { NextConfig } from "next";
 
+const isProd = process.env.NODE_ENV === 'production';
+
 const nextConfig: NextConfig = {
+  serverExternalPackages: ['electron'],
+  ...(isProd && { output: 'export' }),
   images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "picsum.photos" },
-      { protocol: "https", hostname: "images.unsplash.com" },
-      { protocol: "https", hostname: "source.unsplash.com" },
-    ],
+    unoptimized: true,
   },
 };
 

@@ -38,12 +38,14 @@ export default function WorkCard({
   // legacy prop, ignored
   flip?: boolean;
 }) {
-  const cover = work.cover || "/work/_placeholder.svg";
+  const cover = work.cover;
   const tilt = TILTS[index % TILTS.length];
   const tapeColor = TAPE_COLORS[index % TAPE_COLORS.length];
   const doodleKind = DOODLES[index % DOODLES.length];
   const tagPrimary = work.tags?.[0] ?? "Work";
   const subTags = (work.tags ?? []).slice(1);
+  const coverFit = work.coverFit ?? "cover";
+  const coverAspect = work.coverAspect ?? "16 / 10";
 
   return (
     <motion.div
@@ -58,11 +60,11 @@ export default function WorkCard({
         style={{ transform: `rotate(${tilt}deg)` }}
         className="relative will-change-transform"
       >
-      <Link
-        href={`/work/${work.slug}`}
-        data-cursor-text="READ"
-        className="group relative block overflow-hidden rounded-2xl bg-white border-[8px] border-[var(--line)] shadow-[0_8px_22px_-12px_rgba(0,0,0,0.16)] transition-all duration-500 ease-out"
-      >
+        <Link
+          href={`/work/${work.slug}`}
+          data-cursor-text="READ"
+          className="group relative block overflow-hidden rounded-2xl bg-white border-[8px] border-[var(--line)] shadow-[0_8px_22px_-12px_rgba(0,0,0,0.16)] transition-all duration-500 ease-out"
+        >
         {/* small piece of tape at top-left — peeks out of the corner */}
         <span
           aria-hidden
@@ -80,16 +82,21 @@ export default function WorkCard({
         />
 
         {/* cover image — top of card, sharp edges below */}
-        <div className="relative aspect-[16/10] overflow-hidden bg-line">
-          <Image
-            src={cover}
-            alt={work.title}
-            fill
-            sizes="(min-width: 1024px) 360px, 100vw"
-            className="object-cover transition-transform duration-[400ms] ease-out group-hover:scale-[1.08]"
-            unoptimized
-          />
-        </div>
+        {cover && (
+          <div
+            className="relative overflow-hidden bg-line"
+            style={{ aspectRatio: coverAspect }}
+          >
+            <Image
+              src={cover}
+              alt={work.title}
+              fill
+              sizes="(min-width: 1024px) 360px, 100vw"
+              className={`${coverFit === "contain" ? "object-contain" : "object-cover"} transition-transform duration-[400ms] ease-out group-hover:scale-[1.08]`}
+              unoptimized
+            />
+          </div>
+        )}
 
         {/* content */}
         <div className="px-5 pt-4 pb-5">

@@ -7,16 +7,17 @@ import StickyNote from "@/components/notebook/StickyNote";
 import Doodle from "@/components/notebook/Doodle";
 import InkUnderline from "@/components/notebook/InkUnderline";
 import Stamp from "@/components/notebook/Stamp";
+import type { WorkMeta } from "@/lib/content";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-export default function Hero() {
+export default function Hero({ works }: { works: WorkMeta[] }) {
   const reduced = useReducedMotion();
 
   return (
     <section className="relative pt-1 sm:pt-2 pb-4 sm:pb-6">
       {/* Photos hanging above the flyleaf */}
-      <PhotoWall />
+      <PhotoWall works={works} />
 
       {/* The flyleaf itself */}
       <div className="notebook-shell mt-4 sm:mt-8 relative">
@@ -28,7 +29,7 @@ export default function Hero() {
             transition={{ duration: 0.9, delay: 0.9, ease }}
             className="lg:col-span-8 min-w-0"
           >
-            <p className="serif  text-2xl sm:text-3xl text-muted">
+            <p className="serif text-2xl sm:text-3xl text-muted">
               Hello, 我是
             </p>
 
@@ -57,8 +58,6 @@ export default function Hero() {
               <InkUnderline thickness={2.4}>会心一笑</InkUnderline>
               的产品。
             </p>
-
-
           </motion.div>
 
           {/* sticky note: today's focus */}
@@ -92,8 +91,6 @@ export default function Hero() {
             </StickyNote>
           </motion.div>
         </div>
-
-
       </div>
     </section>
   );

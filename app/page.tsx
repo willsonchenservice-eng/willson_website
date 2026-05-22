@@ -1,14 +1,16 @@
 import Link from "next/link";
-import { getAllWork, getAllWriting } from "@/lib/content";
+import { getAllWork, getAllWritingFull } from "@/lib/content";
 import WorkCard from "@/components/WorkCard";
 import ArticleCard from "@/components/ArticleCard";
 import Hero from "@/components/Hero";
+import PhotoWall from "@/components/PhotoWall";
 import Chapter from "@/components/notebook/Chapter";
 import HandDivider from "@/components/notebook/HandDivider";
 import Stamp from "@/components/notebook/Stamp";
 import InkUnderline from "@/components/notebook/InkUnderline";
 import Doodle from "@/components/notebook/Doodle";
 import SocialEmbed from "@/components/SocialEmbed";
+import ScrollReveal from "@/components/gsap/ScrollReveal";
 
 const BELIEFS = [
   {
@@ -45,16 +47,19 @@ const BELIEFS = [
   },
 ];
 
-export default function Home() {
-  const works = getAllWork().slice(0, 4);
-  const posts = getAllWriting().slice(0, 5);
+export default async function Home() {
+  const allWorks = await getAllWork();
+  const works = allWorks.slice(0, 4);
+  const allPosts = await getAllWritingFull();
+  const posts = allPosts.slice(0, 5);
 
   return (
     <>
-      <Hero />
+      <Hero works={allWorks} />
 
       <div className="notebook-shell">
         {/* ── Selected Work ───────────────────────────── */}
+        <ScrollReveal>
           <section className="my-[200px]">
             <HandDivider className="my-8" />
             <Chapter
@@ -83,8 +88,10 @@ export default function Home() {
               ))}
             </div>
           </section>
+        </ScrollReveal>
 
         {/* ── Manifesto ───────────────────────────── */}
+        <ScrollReveal delay={0.1}>
           <section className="my-[200px]">
             <HandDivider className="my-8" />
             <Chapter
@@ -121,8 +128,10 @@ export default function Home() {
               ))}
             </ul>
           </section>
+        </ScrollReveal>
 
         {/* ── Latest from the Notebook ───────────────────────────── */}
+        <ScrollReveal delay={0.2}>
           <section className="my-[200px]">
             <HandDivider className="my-8" />
             <Chapter
@@ -148,8 +157,10 @@ export default function Home() {
               ))}
             </div>
           </section>
+        </ScrollReveal>
 
         {/* ── On Xiaohongshu ───────────────────────────── */}
+        <ScrollReveal delay={0.3}>
           <section className="mt-[100px]">
             <HandDivider className="my-8" />
             <Chapter
@@ -182,8 +193,10 @@ export default function Home() {
               ]}
             />
           </section>
+        </ScrollReveal>
 
         {/* ── Services teaser ───────────────────────────── */}
+        <ScrollReveal delay={0.4}>
           <section className="mt-[100px] mb-4">
             <HandDivider className="my-8" />
             <Chapter
@@ -202,7 +215,7 @@ export default function Home() {
                 href="/services"
                 className="serif  text-lg inline-flex items-center gap-2 self-start underline underline-offset-[5px] decoration-[var(--red-pen)] decoration-1 hover:decoration-2 transition"
               >
-                看委托单
+                聊聊
                 <Doodle
                   kind="arrow-right"
                   size={24}
@@ -212,6 +225,7 @@ export default function Home() {
               </Link>
             </div>
           </section>
+        </ScrollReveal>
       </div>
     </>
   );

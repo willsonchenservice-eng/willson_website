@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1200" width="1600" height="1200">
+  <rect width="1600" height="1200" fill="#1a1a1a"/>
+  <g fill="#ff4d2e">
+    <rect x="0" y="0" width="1600" height="120"/>
+    <rect x="0" y="1080" width="1600" height="120"/>
+  </g>
+  <g fill="#f5f1e8" font-family="Georgia, serif" text-anchor="middle">
+    <text x="800" y="560" font-size="120" font-style="italic">cover 待补</text>
+    <text x="800" y="660" font-size="36" fill="#6b6b66">awaiting real artwork · stage 3 task G3c</text>
+  </g>
+</svg>
