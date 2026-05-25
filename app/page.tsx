@@ -1,16 +1,14 @@
 import Link from "next/link";
-import { getAllWork, getAllWritingFull } from "@/lib/content";
+import { getAllWork, getAllWriting } from "@/lib/content";
 import WorkCard from "@/components/WorkCard";
 import ArticleCard from "@/components/ArticleCard";
 import Hero from "@/components/Hero";
-import PhotoWall from "@/components/PhotoWall";
 import Chapter from "@/components/notebook/Chapter";
 import HandDivider from "@/components/notebook/HandDivider";
 import Stamp from "@/components/notebook/Stamp";
 import InkUnderline from "@/components/notebook/InkUnderline";
 import Doodle from "@/components/notebook/Doodle";
 import SocialEmbed from "@/components/SocialEmbed";
-import ScrollReveal from "@/components/gsap/ScrollReveal";
 
 const BELIEFS = [
   {
@@ -47,19 +45,16 @@ const BELIEFS = [
   },
 ];
 
-export default async function Home() {
-  const allWorks = await getAllWork();
-  const works = allWorks.slice(0, 4);
-  const allPosts = await getAllWritingFull();
-  const posts = allPosts.slice(0, 5);
+export default function Home() {
+  const works = getAllWork().slice(0, 4);
+  const posts = getAllWriting().slice(0, 5);
 
   return (
     <>
-      <Hero works={allWorks} />
+      <Hero />
 
       <div className="notebook-shell">
         {/* ── Selected Work ───────────────────────────── */}
-        <ScrollReveal>
           <section className="my-[200px]">
             <HandDivider className="my-8" />
             <Chapter
@@ -88,10 +83,8 @@ export default async function Home() {
               ))}
             </div>
           </section>
-        </ScrollReveal>
 
         {/* ── Manifesto ───────────────────────────── */}
-        <ScrollReveal delay={0.1}>
           <section className="my-[200px]">
             <HandDivider className="my-8" />
             <Chapter
@@ -128,10 +121,8 @@ export default async function Home() {
               ))}
             </ul>
           </section>
-        </ScrollReveal>
 
         {/* ── Latest from the Notebook ───────────────────────────── */}
-        <ScrollReveal delay={0.2}>
           <section className="my-[200px]">
             <HandDivider className="my-8" />
             <Chapter
@@ -157,10 +148,8 @@ export default async function Home() {
               ))}
             </div>
           </section>
-        </ScrollReveal>
 
         {/* ── On Xiaohongshu ───────────────────────────── */}
-        <ScrollReveal delay={0.3}>
           <section className="mt-[100px]">
             <HandDivider className="my-8" />
             <Chapter
@@ -180,23 +169,21 @@ export default async function Home() {
                   src: "/wall/xhs-xinjiang.mp4",
                   href: "https://www.xiaohongshu.com/explore/6a0091b30000000036033144?xsec_token=YBJkVmHPRc2NZ1SwqKizTqb31Jk6fgE9uVtMhfGZIBjiw%3D&xsec_source=pc_creatormng",
                   postTitle: "五一逃去北疆，找回了自由的我",
-                  body: "五一我用相机记录了自己从赛里木湖到那拉提的所见所想。我的新疆领队看过之后非常喜欢，重新让他感受到了对新疆的热爱。",
+                  body: "五一我用相机记录自己从赛里木湖到那拉提的所见所想。我的新疆领队看过之后非常喜欢，重新让他感受到对新疆的热爱。",
                   aspectRatio: "16 / 9",
                 },
                 {
                   src: "/wall/xhs-hangzhou.mp4",
                   href: "https://www.xiaohongshu.com/discovery/item/68e3f714000000000300c431?source=webshare&xhsshare=pc_web&xsec_token=ABFXKMn3LyrhPkarwZnDVPeilXAADT19Lv9R6TLZ_vhHQ=&xsec_source=pc_share",
                   postTitle: "你还在公式化旅游？听听我的故事 — 杭州街溜子",
-                  body: "厌倦了打卡式的旅游？这次我没有清单、没有路线，只是在杭州的街巷里漫无目的地溜达。真正的城市气味，往往藏在没人拍的那些角落里。",
+                  body: "厌倦打卡式旅游？这次我没有清单、没有路线，只是在杭州的街巷里漫无目的地溜达。真正的城市气味，往往藏在没人拍的那些角落里。",
                   aspectRatio: "16 / 9",
                 },
               ]}
             />
           </section>
-        </ScrollReveal>
 
         {/* ── Services teaser ───────────────────────────── */}
-        <ScrollReveal delay={0.4}>
           <section className="mt-[100px] mb-4">
             <HandDivider className="my-8" />
             <Chapter
@@ -215,7 +202,7 @@ export default async function Home() {
                 href="/services"
                 className="serif  text-lg inline-flex items-center gap-2 self-start underline underline-offset-[5px] decoration-[var(--red-pen)] decoration-1 hover:decoration-2 transition"
               >
-                聊聊
+                看委托单
                 <Doodle
                   kind="arrow-right"
                   size={24}
@@ -225,7 +212,6 @@ export default async function Home() {
               </Link>
             </div>
           </section>
-        </ScrollReveal>
       </div>
     </>
   );

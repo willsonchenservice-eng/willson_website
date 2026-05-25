@@ -7,17 +7,16 @@ import StickyNote from "@/components/notebook/StickyNote";
 import Doodle from "@/components/notebook/Doodle";
 import InkUnderline from "@/components/notebook/InkUnderline";
 import Stamp from "@/components/notebook/Stamp";
-import type { WorkMeta } from "@/lib/content";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-export default function Hero({ works }: { works: WorkMeta[] }) {
+export default function Hero() {
   const reduced = useReducedMotion();
 
   return (
     <section className="relative pt-1 sm:pt-2 pb-4 sm:pb-6">
       {/* Photos hanging above the flyleaf */}
-      <PhotoWall works={works} />
+      <PhotoWall />
 
       {/* The flyleaf itself */}
       <div className="notebook-shell mt-4 sm:mt-8 relative">

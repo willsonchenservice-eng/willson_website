@@ -12,7 +12,6 @@ import {
   type MotionValue,
 } from "framer-motion";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import type { WorkMeta } from "@/lib/content";
 
 const CLUSTER_MAX = 1200;
 
@@ -31,8 +30,7 @@ type Photo = {
   hideOnMobile?: boolean;
 };
 
-// 保留个人照片，其他从 work 中获取
-const staticPhotos: Photo[] = [
+const photos: Photo[] = [
   {
     src: "/wall/me-2025.mp4",
     caption: "Me, 2025",
@@ -43,37 +41,40 @@ const staticPhotos: Photo[] = [
     height: 285,
     zIndex: 4,
   },
+  {
+    src: "/wall/huijian.webp",
+    caption: "回见",
+    rotate: 1.2,
+    leftPct: 82,
+    stringHeight: 68,
+    width: 220,
+    height: 220,
+    fit: "contain",
+    imageScale: 1.2,
+    zIndex: 1,
+  },
+  {
+    src: "/wall/stickers.gif",
+    caption: "表情包",
+    rotate: -0.8,
+    leftPct: 62,
+    stringHeight: 48,
+    width: 200,
+    height: 200,
+    fit: "contain",
+    zIndex: 5,
+  },
+  {
+    src: "/wall/photography.png",
+    caption: "Photography",
+    rotate: 0.6,
+    leftPct: 40,
+    stringHeight: 52,
+    width: 160,
+    height: 200,
+    zIndex: 3,
+  },
 ];
-
-// 为 work 照片生成配置
-function getWorkPhotos(works: WorkMeta[]): Photo[] {
-  const configs = [
-    { leftPct: 28, stringHeight: 60, width: 180, height: 113, zIndex: 6 },
-    { leftPct: 44, stringHeight: 70, width: 260, height: 163, zIndex: 2 },
-    { leftPct: 60, stringHeight: 85, width: 280, height: 175, zIndex: 5 },
-    { leftPct: 78, stringHeight: 55, width: 240, height: 150, zIndex: 3 },
-  ];
-
-  const rotates = [1, -0.5, 1.5, -1];
-
-  return works
-    .filter((w) => w.cover)
-    .slice(0, 4)
-    .map((work, i) => {
-      const config = configs[i % configs.length];
-      return {
-        src: work.cover!,
-        caption: work.title,
-        href: `/work/${work.slug}`,
-        rotate: rotates[i % rotates.length],
-        ...config,
-      };
-    });
-}
-
-function buildPhotos(works: WorkMeta[]): Photo[] {
-  return [...staticPhotos, ...getWorkPhotos(works)];
-}
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
@@ -373,7 +374,7 @@ function HangingPhoto({
   );
 }
 
-export default function PhotoWall({ works }: { works: WorkMeta[] }) {
+export default function PhotoWall() {
   const ref = useRef<HTMLDivElement>(null);
   const reduced = !!useReducedMotion();
 
@@ -421,8 +422,6 @@ export default function PhotoWall({ works }: { works: WorkMeta[] }) {
     window.addEventListener("mousemove", onMove);
     return () => window.removeEventListener("mousemove", onMove);
   }, [mx, my, reduced]);
-
-  const photos = buildPhotos(works);
 
   return (
     <div
