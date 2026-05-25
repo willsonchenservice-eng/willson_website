@@ -4,8 +4,8 @@ import Chapter from "@/components/notebook/Chapter";
 
 export const metadata = { title: "Work" };
 
-export default async function WorkIndex() {
-  const works = await getAllWork();
+export default function WorkIndex() {
+  const works = getAllWork();
 
   return (
     <div className="notebook-shell pb-24">

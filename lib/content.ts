@@ -19,6 +19,10 @@ export interface WorkMeta {
   draft?: boolean;
 }
 
+export interface WorkFull extends WorkMeta {
+  content: string;
+}
+
 export interface WritingMeta {
   slug: string;
   title: string;
@@ -28,6 +32,10 @@ export interface WritingMeta {
   source?: string;
   sourceUrl?: string;
   draft?: boolean;
+}
+
+export interface WritingFull extends WritingMeta {
+  content: string;
 }
 
 const ROOT = path.join(process.cwd(), "content");
@@ -53,6 +61,17 @@ export function getAllWork(): WorkMeta[] {
     .sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
 }
 
+export function getAllWorkFull(): WorkFull[] {
+  return readCollection("work")
+    .map(({ slug, data, content }) => ({
+      slug,
+      ...(data as Omit<WorkMeta, "slug">),
+      content,
+    }))
+    .filter((w) => !w.draft)
+    .sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+}
+
 export function getWork(slug: string) {
   const dir = path.join(ROOT, "work", `${slug}.mdx`);
   if (!fs.existsSync(dir)) return null;
@@ -63,6 +82,17 @@ export function getWork(slug: string) {
 export function getAllWriting(): WritingMeta[] {
   return readCollection("writing")
     .map(({ slug, data }) => ({ slug, ...(data as Omit<WritingMeta, "slug">) }))
+    .filter((w) => !w.draft)
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+}
+
+export function getAllWritingFull(): WritingFull[] {
+  return readCollection("writing")
+    .map(({ slug, data, content }) => ({
+      slug,
+      ...(data as Omit<WritingMeta, "slug">),
+      content,
+    }))
     .filter((w) => !w.draft)
     .sort((a, b) => (a.date < b.date ? 1 : -1));
 }
