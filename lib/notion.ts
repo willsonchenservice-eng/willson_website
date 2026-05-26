@@ -355,10 +355,29 @@ export async function fetchNotionWork(force: boolean = false) {
           const titleProp = props["名称"];
           const slugProp = props["Slug"];
           const coverProp = props["cover"];
+          const clientProp = props["Client"];
+          const roleProp = props["Role"];
+          const yearProp = props["Year"];
+          const summaryProp = props["Summary"];
+          const coverFitProp = props["CoverFit"];
+          const coverAspectProp = props["CoverAspect"];
+          const tagsProp = props["Tags"];
+          const orderProp = props["Order"];
+          const externalLinkProp = props["ExternalLink"];
 
           const title = titleProp?.title?.[0]?.plain_text || "Untitled";
           let slug = slugProp?.rich_text?.[0]?.plain_text || page.id;
           slug = slug.replace(/\s+/g, '-').replace(/[^\w一-龥-]/g, '');
+
+          const client = clientProp?.select?.name;
+          const role = roleProp?.rich_text?.[0]?.plain_text;
+          const year = yearProp?.rich_text?.[0]?.plain_text;
+          const summaryFromProp = summaryProp?.rich_text?.[0]?.plain_text;
+          const coverFit = coverFitProp?.select?.name as "cover" | "contain";
+          const coverAspect = coverAspectProp?.rich_text?.[0]?.plain_text;
+          const tags = tagsProp?.multi_select?.map((t: any) => t.name);
+          const order = orderProp?.number;
+          const externalLink = externalLinkProp?.url;
 
           // 处理 cover：如果是 Notion 图片，下载到本地
           let cover: string | undefined;
@@ -424,9 +443,16 @@ export async function fetchNotionWork(force: boolean = false) {
           return {
             slug,
             title,
+            client,
+            role,
+            year,
+            summary: summaryFromProp || extractSummary(content),
             cover,
-            // 从内容提取摘要
-            summary: extractSummary(content),
+            coverFit,
+            coverAspect,
+            tags,
+            order,
+            externalLink,
             content,
           };
         })

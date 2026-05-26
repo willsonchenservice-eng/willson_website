@@ -6,8 +6,8 @@ import Stamp from "@/components/notebook/Stamp";
 import WashiTape from "@/components/notebook/WashiTape";
 import PageNumber from "@/components/notebook/PageNumber";
 
-export function generateStaticParams() {
-  const writings = getAllWritingFull();
+export async function generateStaticParams() {
+  const writings = await getAllWritingFull();
   return writings
     .filter((p) => !p.sourceUrl)
     .map((p) => ({ slug: p.slug }));
@@ -15,13 +15,13 @@ export function generateStaticParams() {
 
 export const dynamicParams = true;
 
-export function generateMetadata({
+export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = params;
-  const writings = getAllWritingFull();
+  const { slug } = await params;
+  const writings = await getAllWritingFull();
   const post = writings.find((w) => w.slug === slug);
   if (!post) return {};
   return { title: post.title, description: post.summary };
@@ -37,13 +37,13 @@ function parseDate(iso: string) {
   };
 }
 
-export default function WritingDetail({
+export default async function WritingDetail({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = params;
-  const all = getAllWritingFull();
+  const { slug } = await params;
+  const all = await getAllWritingFull();
 
   console.log("=== WritingDetail Debug ===");
   console.log("Requested slug:", JSON.stringify(slug));

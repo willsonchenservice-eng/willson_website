@@ -6,20 +6,20 @@ import MdxBody from "@/components/MdxBody";
 import Stamp from "@/components/notebook/Stamp";
 import PaperClip from "@/components/notebook/PaperClip";
 
-export function generateStaticParams() {
-  const works = getAllWork();
+export async function generateStaticParams() {
+  const works = await getAllWork();
   return works.map((w) => ({ slug: w.slug }));
 }
 
 export const dynamicParams = true;
 
-export function generateMetadata({
+export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = params;
-  const post = getWork(slug);
+  const { slug } = await params;
+  const post = await getWork(slug);
   if (!post) return {};
   return { title: post.meta.title, description: post.meta.summary };
 }
@@ -34,13 +34,13 @@ interface ExtendedMeta {
   externalLink?: string;
 }
 
-export default function WorkDetail({
+export default async function WorkDetail({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = params;
-  const post = getWork(slug);
+  const { slug } = await params;
+  const post = await getWork(slug);
   if (!post) notFound();
 
   const meta = post.meta as unknown as ExtendedMeta;

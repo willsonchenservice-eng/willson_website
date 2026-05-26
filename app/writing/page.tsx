@@ -4,8 +4,8 @@ import Chapter from "@/components/notebook/Chapter";
 
 export const metadata = { title: "Blog" };
 
-export default function WritingIndex() {
-  const entries = getAllWritingFull();
+export default async function WritingIndex() {
+  const entries = await getAllWritingFull();
 
   // group by year, newest first
   const byYear = entries.reduce<Record<string, typeof entries>>((acc, e) => {

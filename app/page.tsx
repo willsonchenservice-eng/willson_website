@@ -45,9 +45,9 @@ const BELIEFS = [
   },
 ];
 
-export default function Home() {
-  const works = getAllWork().slice(0, 4);
-  const posts = getAllWriting().slice(0, 5);
+export default async function Home() {
+  const works = (await getAllWork()).slice(0, 4);
+  const posts = (await getAllWriting()).slice(0, 5);
 
   return (
     <>
