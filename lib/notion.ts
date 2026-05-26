@@ -1,5 +1,3 @@
-"use server";
-
 import { Client } from "@notionhq/client";
 import fs from "fs";
 import path from "path";
