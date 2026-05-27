@@ -197,24 +197,16 @@ export async function fetchNotionWriting(force: boolean = false) {
   const databaseId = process.env.NOTION_DATABASE_ID;
   if (!databaseId || !process.env.NOTION_API_KEY) {
     console.warn("Missing Notion environment variables. Falling back to local MDX.");
-    console.warn("NOTION_DATABASE_ID:", databaseId ? "set" : "missing");
-    console.warn("NOTION_API_KEY:", process.env.NOTION_API_KEY ? "set" : "missing");
     return null;
   }
 
-  // 检查缓存
   const now = Date.now();
   const cache = getCache();
   if (!force && cache.writings && (now - cache.time < CACHE_DURATION)) {
-    console.log("Notion: Using cached data");
     return cache.writings;
   }
 
-  if (force) {
-    console.log("Notion: Force refreshing writing data...");
-  } else {
-    console.log("Notion: Fetching from database...");
-  }
+  console.log("Notion: Fetching from database...");
 
   try {
     const response = await notion.dataSources.query({
@@ -241,45 +233,30 @@ export async function fetchNotionWriting(force: boolean = false) {
         .map(async (page) => {
           const props = page.properties;
 
-          // Extract properties (Chinese field names)
-          const titleProp = props["名称"];
-          const slugProp = props["Slug"];
-          const dateProp = props["date"];
-          const topicProp = props["Topic"];
+          const titleProp = getProp(props, ["名称", "Name", "Title"]);
+          const slugProp = getProp(props, ["Slug"]);
+          const dateProp = getProp(props, ["date", "Date", "日期"]);
+          const topicProp = getProp(props, ["Topic", "话题"]);
+          const summaryProp = getProp(props, ["Summary", "摘要"]);
 
           const title = titleProp?.title?.[0]?.plain_text || "Untitled";
-          // 优先用用户填的 Slug，如果没有就用 Notion page ID
           let slug = slugProp?.rich_text?.[0]?.plain_text || page.id;
-          // Clean slug: replace spaces with -, remove special chars
           slug = slug.replace(/\s+/g, '-').replace(/[^\w一-龥-]/g, '');
           const date = dateProp?.date?.start || new Date().toISOString();
 
-          // Topic is multi-select, take first one
           let topic: string | undefined;
-          if (topicProp?.multi_select && topicProp.multi_select.length > 0) {
-            topic = topicProp.multi_select[0].name;
-          }
+          if (topicProp?.multi_select?.[0]) topic = topicProp.multi_select[0].name;
 
-          // Fetch page content as markdown directly
-          const mdResponse = await notion.pages.retrieveMarkdown({
-            page_id: page.id,
-          });
-
+          const mdResponse = await notion.pages.retrieveMarkdown({ page_id: page.id });
           let content = mdResponse.markdown || "";
-
-          // 修复 Notion 返回的 HTML 标签，让 MDX 能正确解析
           content = content.replace(/<br>/g, "<br/>");
           content = content.replace(/<hr>/g, "<hr/>");
           content = content.replace(/<img([^>]*)>/g, "<img$1/>");
-
-          // 处理图片：下载到本地并替换链接
           content = await processNotionImages(content, force);
-
-          // 转换 B 站链接成 <Bilibili> 组件
           content = convertBilibiliLinks(content);
 
-          // 从正文内容提取摘要
-          const summary = extractSummary(content);
+          const summaryFromProp = summaryProp?.rich_text?.[0]?.plain_text;
+          const summary = summaryFromProp || extractSummary(content);
 
           return {
             slug,
@@ -294,8 +271,7 @@ export async function fetchNotionWriting(force: boolean = false) {
         })
     );
 
-    // 保存缓存
-    const cache = getCache();
+    cache.writings = writings;
     cache.writings = writings;
     cache.time = now;
 
@@ -306,6 +282,13 @@ export async function fetchNotionWriting(force: boolean = false) {
   }
 }
 
+function getProp(props: Record<string, any>, names: string[]) {
+  for (const name of names) {
+    if (props[name]) return props[name];
+  }
+  return undefined;
+}
+
 export async function fetchNotionWork(force: boolean = false) {
   const databaseId = process.env.NOTION_WORK_DATABASE_ID;
   if (!databaseId || !process.env.NOTION_API_KEY) {
@@ -313,19 +296,13 @@ export async function fetchNotionWork(force: boolean = false) {
     return null;
   }
 
-  // 检查缓存
   const now = Date.now();
   const cache = getCache();
   if (!force && cache.works && (now - cache.time < CACHE_DURATION)) {
-    console.log("Notion: Using cached work data");
     return cache.works;
   }
 
-  if (force) {
-    console.log("Notion: Force refreshing work data...");
-  } else {
-    console.log("Notion: Fetching work from database...");
-  }
+  console.log("Notion: Fetching work from database...");
 
   try {
     const response = await notion.dataSources.query({
@@ -349,22 +326,20 @@ export async function fetchNotionWork(force: boolean = false) {
         .filter((item): item is { id: string; properties: Record<string, any>; object: "page" } =>
           item.object === "page"
         )
-        .map(async (page, index) => {
+        .map(async (page) => {
           const props = page.properties;
 
-          // Extract properties (Chinese field names)
-          const titleProp = props["名称"];
-          const slugProp = props["Slug"];
-          const coverProp = props["cover"];
-          const clientProp = props["Client"];
-          const roleProp = props["Role"];
-          const yearProp = props["Year"];
-          const summaryProp = props["Summary"];
-          const coverFitProp = props["CoverFit"];
-          const coverAspectProp = props["CoverAspect"];
-          const tagsProp = props["Tags"];
-          const orderProp = props["Order"];
-          const externalLinkProp = props["ExternalLink"];
+          const titleProp = getProp(props, ["名称", "Name", "Title"]);
+          const slugProp = getProp(props, ["Slug"]);
+          const coverProp = getProp(props, ["cover", "Cover", "封面"]);
+          const clientProp = getProp(props, ["Client", "客户"]);
+          const roleProp = getProp(props, ["Role", "角色"]);
+          const yearProp = getProp(props, ["Year", "年份"]);
+          const summaryProp = getProp(props, ["Summary", "摘要"]);
+          const coverFitProp = getProp(props, ["CoverFit", "适配"]);
+          const tagsProp = getProp(props, ["Tags", "标签"]);
+          const orderProp = getProp(props, ["Order", "排序"]);
+          const externalLinkProp = getProp(props, ["ExternalLink", "链接"]);
 
           const title = titleProp?.title?.[0]?.plain_text || "Untitled";
           let slug = slugProp?.rich_text?.[0]?.plain_text || page.id;
@@ -375,47 +350,32 @@ export async function fetchNotionWork(force: boolean = false) {
           const year = yearProp?.rich_text?.[0]?.plain_text;
           const summaryFromProp = summaryProp?.rich_text?.[0]?.plain_text;
           const coverFit = coverFitProp?.select?.name as "cover" | "contain";
-          const coverAspect = coverAspectProp?.rich_text?.[0]?.plain_text;
           const tags = tagsProp?.multi_select?.map((t: any) => t.name);
           const order = orderProp?.number;
           const externalLink = externalLinkProp?.url;
 
-          // 处理 cover：如果是 Notion 图片，下载到本地
           let cover: string | undefined;
-          console.log(`Processing cover for work: "${title}"`);
           if (coverProp?.files?.[0]) {
             const file = coverProp.files[0];
             if (file.type === "file" && file.file?.url) {
               try {
                 const url = file.file.url;
                 const urlObj = new URL(url);
-                const urlPath = urlObj.pathname;
-                const parts = urlPath.split("/").filter(Boolean);
+                const parts = urlObj.pathname.split("/").filter(Boolean);
                 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
                 const uuidPart = parts.find(p => uuidRegex.test(p));
-                const fileId = uuidPart || page.id;
-                cover = await downloadImage(url, fileId, force);
-              } catch (e) {
-                console.warn("Failed to download cover:", e);
-              }
+                cover = await downloadImage(url, uuidPart || page.id, force);
+              } catch (e) {}
             } else if (file.type === "external" && file.external?.url) {
               cover = file.external.url;
             }
           }
 
-          // Fetch page content as markdown directly
-          const mdResponse = await notion.pages.retrieveMarkdown({
-            page_id: page.id,
-          });
-
+          const mdResponse = await notion.pages.retrieveMarkdown({ page_id: page.id });
           let content = mdResponse.markdown || "";
-
-          // 修复 Notion 返回的 HTML 标签
           content = content.replace(/<br>/g, "<br/>");
           content = content.replace(/<hr>/g, "<hr/>");
           content = content.replace(/<img([^>]*)>/g, "<img$1/>");
-
-          // 处理图片：下载到本地并替换链接
           content = await processNotionImages(content, force);
 
           return {
@@ -427,7 +387,6 @@ export async function fetchNotionWork(force: boolean = false) {
             summary: summaryFromProp || extractSummary(content),
             cover,
             coverFit,
-            coverAspect,
             tags,
             order,
             externalLink,
@@ -436,10 +395,8 @@ export async function fetchNotionWork(force: boolean = false) {
         })
     );
 
-    // 保存缓存
     cache.works = works;
     cache.time = now;
-
     return works;
   } catch (error) {
     console.error("Error fetching work from Notion:", error);
@@ -454,19 +411,13 @@ export async function fetchNotionPhotos(force: boolean = false) {
     return null;
   }
 
-  // 检查缓存
   const now = Date.now();
   const cache = getCache();
   if (!force && cache.photos && (now - cache.time < CACHE_DURATION)) {
-    console.log("Notion: Using cached photos data");
     return cache.photos;
   }
 
-  if (force) {
-    console.log("Notion: Force refreshing photos data...");
-  } else {
-    console.log("Notion: Fetching photos from database...");
-  }
+  console.log("Notion: Fetching photos from database...");
 
   try {
     const response = await notion.dataSources.query({
@@ -490,48 +441,40 @@ export async function fetchNotionPhotos(force: boolean = false) {
         .filter((item): item is { id: string; properties: Record<string, any>; object: "page" } =>
           item.object === "page"
         )
-        .map(async (page) => {
+        .map(async (page, index) => {
           const props = page.properties;
 
-          // Extract properties
-          const titleProp = props["名称"];
-          const fileProp = props["File"];
-          const externalUrlProp = props["ExternalUrl"];
-          const rotateProp = props["Rotate"];
-          const leftPctProp = props["LeftPct"];
-          const stringHeightProp = props["StringHeight"];
-          const widthProp = props["Width"];
-          const heightProp = props["Height"];
-          const zIndexProp = props["ZIndex"];
-          const fitProp = props["Fit"];
-          const imageScaleProp = props["ImageScale"];
-          const hideOnMobileProp = props["HideOnMobile"];
-          const linkProp = props["Link"];
+          const titleProp = getProp(props, ["名称", "Name", "Title"]);
+          const fileProp = getProp(props, ["File", "文件"]);
+          const externalUrlProp = getProp(props, ["ExternalUrl", "外部链接"]);
+          const rotateProp = getProp(props, ["Rotate", "旋转"]);
+          const leftPctProp = getProp(props, ["LeftPct", "位置"]);
+          const stringHeightProp = getProp(props, ["StringHeight", "绳长"]);
+          const widthProp = getProp(props, ["Width", "宽度"]);
+          const heightProp = getProp(props, ["Height", "高度"]);
+          const zIndexProp = getProp(props, ["ZIndex", "层级"]);
+          const fitProp = getProp(props, ["Fit", "适配"]);
+          const imageScaleProp = getProp(props, ["ImageScale", "缩放"]);
+          const hideOnMobileProp = getProp(props, ["HideOnMobile", "移动端隐藏"]);
+          const linkProp = getProp(props, ["Link", "链接"]);
 
-          const caption = titleProp?.title?.[0]?.plain_text || "Untitled";
+          const caption = titleProp?.title?.[0]?.plain_text || "";
 
-          // 处理文件
           let src: string | undefined;
           if (fileProp?.files?.[0]) {
             const file = fileProp.files[0];
             if (file.type === "file" && file.file?.url) {
               try {
                 const url = file.file.url;
-                const urlObj = new URL(url);
-                const urlPath = urlObj.pathname;
-                const parts = urlPath.split("/").filter(Boolean);
+                const parts = new URL(url).pathname.split("/").filter(Boolean);
                 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
                 const uuidPart = parts.find(p => uuidRegex.test(p));
-                const fileId = uuidPart || page.id;
-                src = await downloadImage(url, fileId, force);
-              } catch (e) {
-                console.warn("Failed to download photo:", e);
-              }
+                src = await downloadImage(url, uuidPart || page.id, force);
+              } catch (e) {}
             } else if (file.type === "external" && file.external?.url) {
               src = file.external.url;
             }
           }
-          // 回退到外部 URL
           if (!src && externalUrlProp?.url) {
             src = externalUrlProp.url;
           }
@@ -542,21 +485,19 @@ export async function fetchNotionPhotos(force: boolean = false) {
             href: linkProp?.url,
             fit: fitProp?.select?.name as "cover" | "contain",
             imageScale: imageScaleProp?.number,
-            rotate: rotateProp?.number || 0,
-            leftPct: leftPctProp?.number || 50,
-            stringHeight: stringHeightProp?.number || 50,
-            width: widthProp?.number || 200,
-            height: heightProp?.number || 200,
-            zIndex: zIndexProp?.number || 1,
-            hideOnMobile: hideOnMobileProp?.checkbox || false,
+            rotate: rotateProp?.number ?? 0,
+            leftPct: leftPctProp?.number ?? 50,
+            stringHeight: stringHeightProp?.number ?? 50,
+            width: widthProp?.number ?? 200,
+            height: heightProp?.number ?? 200,
+            zIndex: zIndexProp?.number ?? index + 1,
+            hideOnMobile: hideOnMobileProp?.checkbox ?? false,
           };
         })
     );
 
-    // 保存缓存
     cache.photos = photos;
     cache.time = now;
-
     return photos;
   } catch (error) {
     console.error("Error fetching photos from Notion:", error);
