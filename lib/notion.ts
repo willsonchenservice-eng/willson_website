@@ -15,6 +15,8 @@ const getCache = () => {
       writings: null,
       works: null,
       photos: null,
+      beliefs: null,
+      social: null,
       time: 0
     };
   }
@@ -287,6 +289,157 @@ function getProp(props: Record<string, any>, names: string[]) {
     if (props[name]) return props[name];
   }
   return undefined;
+}
+
+export async function fetchNotionBeliefs(force: boolean = false) {
+  const databaseId = process.env.NOTION_BELIEFS_DATABASE_ID;
+  if (!databaseId || !process.env.NOTION_API_KEY) {
+    console.warn("Missing Notion Beliefs database env vars. Falling back to local.");
+    return null;
+  }
+
+  const now = Date.now();
+  const cache = getCache();
+  if (!force && cache.beliefs && (now - cache.time < CACHE_DURATION)) {
+    return cache.beliefs;
+  }
+
+  console.log("Notion: Fetching beliefs from database...");
+
+  try {
+    const response = await notion.dataSources.query({
+      data_source_id: databaseId,
+      filter: {
+        property: "Status",
+        status: {
+          equals: "完成",
+        },
+      },
+      sorts: [
+        {
+          property: "Order",
+          direction: "ascending",
+        },
+      ],
+    });
+
+    const beliefs = response.results
+      .filter((item): item is { id: string; properties: Record<string, any>; object: "page" } =>
+        item.object === "page"
+      )
+      .map((page, index) => {
+        const props = page.properties;
+
+        const titleProp = getProp(props, ["名称", "Name", "Title", "Lead", "标题"]);
+        const tailProp = getProp(props, ["Tail", "Description", "描述"]);
+        const orderProp = getProp(props, ["Order", "排序"]);
+
+        const lead = titleProp?.title?.[0]?.plain_text || "";
+        const tail = tailProp?.rich_text?.[0]?.plain_text || "";
+
+        return {
+          n: String(orderProp?.number ?? index + 1).padStart(2, "0"),
+          lead,
+          tail,
+        };
+      });
+
+    cache.beliefs = beliefs;
+    cache.time = now;
+    return beliefs;
+  } catch (error) {
+    console.error("Error fetching beliefs from Notion:", error);
+    return null;
+  }
+}
+
+export async function fetchNotionSocial(force: boolean = false) {
+  const databaseId = process.env.NOTION_SOCIAL_DATABASE_ID;
+  if (!databaseId || !process.env.NOTION_API_KEY) {
+    console.warn("Missing Notion Social database env vars. Falling back to local.");
+    return null;
+  }
+
+  const now = Date.now();
+  const cache = getCache();
+  if (!force && cache.social && (now - cache.time < CACHE_DURATION)) {
+    return cache.social;
+  }
+
+  console.log("Notion: Fetching social from database...");
+
+  try {
+    const response = await notion.dataSources.query({
+      data_source_id: databaseId,
+      filter: {
+        property: "Status",
+        status: {
+          equals: "完成",
+        },
+      },
+      sorts: [
+        {
+          property: "Order",
+          direction: "ascending",
+        },
+      ],
+    });
+
+    const social = await Promise.all(
+      response.results
+        .filter((item): item is { id: string; properties: Record<string, any>; object: "page" } =>
+          item.object === "page"
+        )
+        .map(async (page) => {
+          const props = page.properties;
+
+          const titleProp = getProp(props, ["名称", "Name", "Title", "标题"]);
+          const fileProp = getProp(props, ["File", "Video", "视频"]);
+          const externalUrlProp = getProp(props, ["ExternalUrl", "外部链接"]);
+          const linkProp = getProp(props, ["Link", "链接"]);
+          const bodyProp = getProp(props, ["Body", "Description", "描述"]);
+          const aspectProp = getProp(props, ["Aspect", "比例"]);
+
+          const postTitle = titleProp?.title?.[0]?.plain_text || "";
+          const body = bodyProp?.rich_text?.[0]?.plain_text || "";
+          const href = linkProp?.url || "";
+          const aspectRatio = aspectProp?.rich_text?.[0]?.plain_text || "16 / 9";
+
+          let src: string | undefined;
+          if (fileProp?.files?.[0]) {
+            const file = fileProp.files[0];
+            if (file.type === "file" && file.file?.url) {
+              try {
+                const parts = new URL(file.file.url).pathname.split("/").filter(Boolean);
+                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                const uuidPart = parts.find(p => uuidRegex.test(p));
+                src = await downloadImage(file.file.url, uuidPart || page.id, force);
+              } catch (e) {}
+            } else if (file.type === "external" && file.external?.url) {
+              src = file.external.url;
+            }
+          }
+          if (!src && externalUrlProp?.url) {
+            src = externalUrlProp.url;
+          }
+
+          return {
+            src: src || "",
+            href,
+            postTitle,
+            body,
+            aspectRatio,
+          };
+        })
+    );
+
+    cache.social = social;
+    cache.time = now;
+    return social;
+  } catch (error) {
+    console.error("Error fetching social from Notion:", error);
+    return null;
+  }
 }
 
 export async function fetchNotionWork(force: boolean = false) {

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
-import { fetchNotionWriting, fetchNotionWork, fetchNotionPhotos } from "./notion";
+import { fetchNotionWriting, fetchNotionWork, fetchNotionPhotos, fetchNotionBeliefs, fetchNotionSocial } from "./notion";
 
 export interface WorkFull extends WorkMeta {
   content: string;
@@ -237,4 +237,64 @@ export async function getAllPhotos(): Promise<Photo[]> {
   console.log("getAllPhotos: Falling back to local photos");
 
   return localPhotos;
+}
+
+export type Belief = {
+  n: string;
+  lead: string;
+  tail: string;
+};
+
+const localBeliefs: Belief[] = [
+  { n: "01", lead: "崇尚 极简主义 的设计风格。", tail: "少即是多，不是炫技口号——是审视每个元素的去留。" },
+  { n: "02", lead: "追求更高的 产品易用性。", tail: "好设计最终是看不见的——用户顺畅完成事，才是判准。" },
+  { n: "03", lead: "微交互数 × 产品体验，成正比。", tail: "在满足任务的可用性之外，那些细小的反馈和动效，是体验差距的真正所在。" },
+  { n: "04", lead: "顺水推舟，不与之争。", tail: "设计师推进体验优化要依赖产品和研发——顺应阶段，比硬碰硬有效得多。" },
+];
+
+export async function getAllBeliefs(): Promise<Belief[]> {
+  console.log("getAllBeliefs: Trying Notion...");
+  const notionBeliefs = await fetchNotionBeliefs();
+  if (notionBeliefs && notionBeliefs.length > 0) {
+    console.log("getAllBeliefs: Using Notion data,", notionBeliefs.length, "beliefs");
+    return notionBeliefs;
+  }
+  console.log("getAllBeliefs: Falling back to local");
+  return localBeliefs;
+}
+
+export type SocialPost = {
+  src: string;
+  href: string;
+  postTitle: string;
+  body: string;
+  aspectRatio: string;
+};
+
+const localSocial: SocialPost[] = [
+  {
+    src: "/wall/xhs-xinjiang.mp4",
+    href: "https://www.xiaohongshu.com/explore/6a0091b30000000036033144",
+    postTitle: "五一逃去北疆，找回了自由的我",
+    body: "五一我用相机记录自己从赛里木湖到那拉提的所见所想。",
+    aspectRatio: "16 / 9",
+  },
+  {
+    src: "/wall/xhs-hangzhou.mp4",
+    href: "https://www.xiaohongshu.com/discovery/item/68e3f714000000000300c431",
+    postTitle: "你还在公式化旅游？听听我的故事 — 杭州街溜子",
+    body: "厌倦打卡式旅游？这次我没有清单、没有路线，只是在杭州的街巷里漫无目的地溜达。",
+    aspectRatio: "16 / 9",
+  },
+];
+
+export async function getAllSocial(): Promise<SocialPost[]> {
+  console.log("getAllSocial: Trying Notion...");
+  const notionSocial = await fetchNotionSocial();
+  if (notionSocial && notionSocial.length > 0) {
+    console.log("getAllSocial: Using Notion data,", notionSocial.length, "posts");
+    return notionSocial;
+  }
+  console.log("getAllSocial: Falling back to local");
+  return localSocial;
 }
