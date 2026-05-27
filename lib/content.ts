@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
-import { fetchNotionWriting, fetchNotionWork } from "./notion";
+import { fetchNotionWriting, fetchNotionWork, fetchNotionPhotos } from "./notion";
 
 export interface WorkFull extends WorkMeta {
   content: string;
@@ -163,4 +163,78 @@ export async function getAllWritingFull(): Promise<WritingFull[]> {
     }))
     .filter((w) => !w.draft)
     .sort((a, b) => (a.date < b.date ? 1 : -1));
+}
+
+export type Photo = {
+  src: string;
+  caption: string;
+  href?: string;
+  fit?: "cover" | "contain";
+  imageScale?: number;
+  rotate: number;
+  leftPct: number;
+  stringHeight: number;
+  width: number;
+  height: number;
+  zIndex: number;
+  hideOnMobile?: boolean;
+};
+
+const localPhotos: Photo[] = [
+  {
+    src: "/wall/me-2025.mp4",
+    caption: "Me, 2025",
+    rotate: -1.5,
+    leftPct: 12,
+    stringHeight: 32,
+    width: 180,
+    height: 285,
+    zIndex: 4,
+  },
+  {
+    src: "/wall/huijian.webp",
+    caption: "回见",
+    rotate: 1.2,
+    leftPct: 82,
+    stringHeight: 68,
+    width: 220,
+    height: 220,
+    fit: "contain",
+    imageScale: 1.2,
+    zIndex: 1,
+  },
+  {
+    src: "/wall/stickers.gif",
+    caption: "表情包",
+    rotate: -0.8,
+    leftPct: 62,
+    stringHeight: 48,
+    width: 200,
+    height: 200,
+    fit: "contain",
+    zIndex: 5,
+  },
+  {
+    src: "/wall/photography.png",
+    caption: "Photography",
+    rotate: 0.6,
+    leftPct: 40,
+    stringHeight: 52,
+    width: 160,
+    height: 200,
+    zIndex: 3,
+  },
+];
+
+export async function getAllPhotos(): Promise<Photo[]> {
+  // First try to fetch from Notion
+  console.log("getAllPhotos: Trying Notion...");
+  const notionPhotos = await fetchNotionPhotos();
+  if (notionPhotos && notionPhotos.length > 0) {
+    console.log("getAllPhotos: Using Notion data,", notionPhotos.length, "photos");
+    return notionPhotos;
+  }
+  console.log("getAllPhotos: Falling back to local photos");
+
+  return localPhotos;
 }

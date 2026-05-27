@@ -14,6 +14,7 @@ const getCache = () => {
     (globalThis as any).__notionCache = {
       writings: null,
       works: null,
+      photos: null,
       time: 0
     };
   }
@@ -337,7 +338,7 @@ export async function fetchNotionWork(force: boolean = false) {
       },
       sorts: [
         {
-          property: "order",
+          property: "Order",
           direction: "ascending",
         },
       ],
@@ -382,47 +383,24 @@ export async function fetchNotionWork(force: boolean = false) {
           // 处理 cover：如果是 Notion 图片，下载到本地
           let cover: string | undefined;
           console.log(`Processing cover for work: "${title}"`);
-          console.log(`coverProp:`, JSON.stringify(coverProp, null, 2));
           if (coverProp?.files?.[0]) {
             const file = coverProp.files[0];
-            console.log(`File type: ${file.type}`);
             if (file.type === "file" && file.file?.url) {
               try {
                 const url = file.file.url;
-                console.log(`Full cover URL: ${url}`);
-
-                // 从 URL 中提取正确的 fileId
                 const urlObj = new URL(url);
                 const urlPath = urlObj.pathname;
-                console.log(`URL path: ${urlPath}`);
-
                 const parts = urlPath.split("/").filter(Boolean);
-                console.log(`URL parts:`, parts);
-
-                // 尝试几种方式提取 fileId
-                let fileId: string;
                 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
                 const uuidPart = parts.find(p => uuidRegex.test(p));
-                if (uuidPart) {
-                  fileId = uuidPart;
-                } else {
-                  // 如果都没有，使用 pageId 作为 fallback
-                  fileId = page.id;
-                }
-
-                console.log(`Final fileId: ${fileId}`);
-                console.log(`Downloading cover...`);
+                const fileId = uuidPart || page.id;
                 cover = await downloadImage(url, fileId, force);
-                console.log(`Cover saved to: ${cover}`);
               } catch (e) {
                 console.warn("Failed to download cover:", e);
               }
             } else if (file.type === "external" && file.external?.url) {
-              console.log(`Using external cover: ${file.external.url}`);
               cover = file.external.url;
             }
-          } else {
-            console.log(`No cover found for work: "${title}"`);
           }
 
           // Fetch page content as markdown directly
@@ -465,6 +443,123 @@ export async function fetchNotionWork(force: boolean = false) {
     return works;
   } catch (error) {
     console.error("Error fetching work from Notion:", error);
+    return null;
+  }
+}
+
+export async function fetchNotionPhotos(force: boolean = false) {
+  const databaseId = process.env.NOTION_PHOTOS_DATABASE_ID;
+  if (!databaseId || !process.env.NOTION_API_KEY) {
+    console.warn("Missing Notion Photos database env vars. Falling back to local photos.");
+    return null;
+  }
+
+  // 检查缓存
+  const now = Date.now();
+  const cache = getCache();
+  if (!force && cache.photos && (now - cache.time < CACHE_DURATION)) {
+    console.log("Notion: Using cached photos data");
+    return cache.photos;
+  }
+
+  if (force) {
+    console.log("Notion: Force refreshing photos data...");
+  } else {
+    console.log("Notion: Fetching photos from database...");
+  }
+
+  try {
+    const response = await notion.dataSources.query({
+      data_source_id: databaseId,
+      filter: {
+        property: "Status",
+        status: {
+          equals: "完成",
+        },
+      },
+      sorts: [
+        {
+          property: "Order",
+          direction: "ascending",
+        },
+      ],
+    });
+
+    const photos = await Promise.all(
+      response.results
+        .filter((item): item is { id: string; properties: Record<string, any>; object: "page" } =>
+          item.object === "page"
+        )
+        .map(async (page) => {
+          const props = page.properties;
+
+          // Extract properties
+          const titleProp = props["名称"];
+          const fileProp = props["File"];
+          const externalUrlProp = props["ExternalUrl"];
+          const rotateProp = props["Rotate"];
+          const leftPctProp = props["LeftPct"];
+          const stringHeightProp = props["StringHeight"];
+          const widthProp = props["Width"];
+          const heightProp = props["Height"];
+          const zIndexProp = props["ZIndex"];
+          const fitProp = props["Fit"];
+          const imageScaleProp = props["ImageScale"];
+          const hideOnMobileProp = props["HideOnMobile"];
+          const linkProp = props["Link"];
+
+          const caption = titleProp?.title?.[0]?.plain_text || "Untitled";
+
+          // 处理文件
+          let src: string | undefined;
+          if (fileProp?.files?.[0]) {
+            const file = fileProp.files[0];
+            if (file.type === "file" && file.file?.url) {
+              try {
+                const url = file.file.url;
+                const urlObj = new URL(url);
+                const urlPath = urlObj.pathname;
+                const parts = urlPath.split("/").filter(Boolean);
+                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                const uuidPart = parts.find(p => uuidRegex.test(p));
+                const fileId = uuidPart || page.id;
+                src = await downloadImage(url, fileId, force);
+              } catch (e) {
+                console.warn("Failed to download photo:", e);
+              }
+            } else if (file.type === "external" && file.external?.url) {
+              src = file.external.url;
+            }
+          }
+          // 回退到外部 URL
+          if (!src && externalUrlProp?.url) {
+            src = externalUrlProp.url;
+          }
+
+          return {
+            src: src || "",
+            caption,
+            href: linkProp?.url,
+            fit: fitProp?.select?.name as "cover" | "contain",
+            imageScale: imageScaleProp?.number,
+            rotate: rotateProp?.number || 0,
+            leftPct: leftPctProp?.number || 50,
+            stringHeight: stringHeightProp?.number || 50,
+            width: widthProp?.number || 200,
+            height: heightProp?.number || 200,
+            zIndex: zIndexProp?.number || 1,
+            hideOnMobile: hideOnMobileProp?.checkbox || false,
+          };
+        })
+    );
+
+    // 保存缓存
+    cache.photos = photos;
+    cache.time = now;
+
+    return photos;
+  } catch (error) {
+    console.error("Error fetching photos from Notion:", error);
     return null;
   }
 }
