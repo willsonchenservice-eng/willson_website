@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getAllWork, getAllWriting, getAllBeliefs, getAllSocial } from "@/lib/content";
+import { getAllWork, getAllWriting, getAllBeliefs, getAllSocial, getAllPhotos } from "@/lib/content";
 import WorkCard from "@/components/WorkCard";
 import ArticleCard from "@/components/ArticleCard";
 import Hero from "@/components/Hero";
