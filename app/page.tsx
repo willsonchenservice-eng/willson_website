@@ -10,7 +10,7 @@ import InkUnderline from "@/components/notebook/InkUnderline";
 import Doodle from "@/components/notebook/Doodle";
 import SocialEmbed from "@/components/SocialEmbed";
 
-function formatBeliefLead(lead: string) {
+function BeliefLead({ lead }: { lead: string }) {
   const match = lead.match(/(.*?)(极简主义|产品易用性|微交互数)(.*)/);
   if (match) {
     return (
@@ -90,7 +90,7 @@ export default async function Home() {
                   </Stamp>
                   <div className="flex-1 min-w-0">
                     <p className="serif text-xl sm:text-[1.4rem] leading-snug">
-                      {formatBeliefLead(b.lead)}
+                      <BeliefLead lead={b.lead} />
                     </p>
                     <p className="text-sm text-muted mt-2 leading-relaxed">
                       {b.tail}
