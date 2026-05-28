@@ -27,10 +27,11 @@ export default async function Home() {
   const posts = (await getAllWriting()).slice(0, 5);
   const beliefs = await getAllBeliefs();
   const social = await getAllSocial();
+  const photos = await getAllPhotos();
 
   return (
     <>
-      <Hero />
+      <Hero photos={photos} />
 
       <div className="notebook-shell">
         {/* ── Selected Work ───────────────────────────── */}
