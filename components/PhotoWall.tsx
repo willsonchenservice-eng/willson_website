@@ -11,12 +11,49 @@ import {
   useAnimationControls,
   type MotionValue,
 } from "framer-motion";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
 import type { Photo } from "@/lib/content";
 
 const CLUSTER_MAX = 1200;
+const TARGET_MEDIA_AREA = 30000;
+const MIN_MEDIA_WIDTH = 128;
+const MAX_MEDIA_WIDTH = 238;
+const MIN_MEDIA_HEIGHT = 118;
+const MAX_MEDIA_HEIGHT = 238;
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
+
+function clamp(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n));
+}
+
+function getBalancedMediaSize(ratio: number) {
+  const safeRatio = clamp(ratio || 1, 0.42, 2.4);
+  let width = Math.sqrt(TARGET_MEDIA_AREA * safeRatio);
+  let height = width / safeRatio;
+  const scale = Math.min(
+    MAX_MEDIA_WIDTH / width,
+    MAX_MEDIA_HEIGHT / height,
+    1
+  );
+  width *= scale;
+  height *= scale;
+
+  if (width < MIN_MEDIA_WIDTH) {
+    width = MIN_MEDIA_WIDTH;
+    height = width / safeRatio;
+  }
+
+  if (height < MIN_MEDIA_HEIGHT) {
+    height = MIN_MEDIA_HEIGHT;
+    width = height * safeRatio;
+  }
+
+  return {
+    width: Math.round(clamp(width, MIN_MEDIA_WIDTH, MAX_MEDIA_WIDTH)),
+    height: Math.round(clamp(height, MIN_MEDIA_HEIGHT, MAX_MEDIA_HEIGHT)),
+  };
+}
 
 function HangingPhoto({
   p,
@@ -39,11 +76,38 @@ function HangingPhoto({
   const px = useTransform(mx, [-0.5, 0.5], [-drift, drift]);
   const py = useTransform(my, [-0.5, 0.5], [-drift * 0.55, drift * 0.55]);
 
+  const initialMediaRatio = Math.max(1, p.width - 20) / Math.max(1, p.height);
+  const [mediaRatio, setMediaRatio] = useState(initialMediaRatio);
+  const mediaRef = useRef<HTMLImageElement | HTMLVideoElement>(null);
+  const { width: mediaW, height: mediaH } = getBalancedMediaSize(mediaRatio);
+  const cardW = mediaW + 20;
+
   const photoStyle: CSSProperties = {
     "--strh": `${p.stringHeight}px`,
-    "--pw": `${p.width}px`,
-    "--ph": `${p.height}px`,
+    "--pw": `${cardW}px`,
+    "--mw": `${mediaW}px`,
+    "--mh": `${mediaH}px`,
   } as CSSProperties;
+
+  const updateMediaRatio = (width: number, height: number) => {
+    if (!width || !height) return;
+    const nextRatio = width / height;
+    setMediaRatio((prevRatio) =>
+      Math.abs(prevRatio - nextRatio) < 0.001 ? prevRatio : nextRatio
+    );
+  };
+
+  useEffect(() => {
+    const media = mediaRef.current;
+    if (!media) return;
+    if (media instanceof HTMLVideoElement) {
+      updateMediaRatio(media.videoWidth, media.videoHeight);
+      return;
+    }
+    if (media.complete) {
+      updateMediaRatio(media.naturalWidth, media.naturalHeight);
+    }
+  }, [p.src]);
 
   const isFront = p.zIndex >= 6;
   const isBack = p.zIndex <= 3;
@@ -52,10 +116,20 @@ function HangingPhoto({
     : isBack
     ? "0 8px 18px -10px rgba(0,0,0,0.14), 0 2px 5px -3px rgba(0,0,0,0.08)"
     : "0 18px 32px -10px rgba(0,0,0,0.25), 0 4px 10px -6px rgba(0,0,0,0.18)";
-  const depthFilter = isBack ? "blur(0.5px) saturate(0.92)" : undefined;
+  const depthFilter = isBack ? "saturate(0.92)" : undefined;
 
   const stringBulgeTable = [1.4, -1.8, 1.0, -2.0, 1.6, -1.2];
   const stringBulge = stringBulgeTable[i % stringBulgeTable.length];
+  const isVideo = /\.(mp4|webm|mov)$/i.test(p.src);
+  const isGif = /\.gif(?:$|\?)/i.test(p.src);
+  const mediaFitClass = p.fit === "cover" ? "object-cover" : "object-contain";
+  const mediaTransform = `${p.imageScale ? `scale(${p.imageScale}) ` : ""}translateZ(0)`;
+  const mediaStyle: CSSProperties = {
+    transform: mediaTransform,
+    transformOrigin: p.imageScale ? "50% 0%" : undefined,
+    backfaceVisibility: "hidden",
+    willChange: "transform",
+  };
 
   const card = (
     <div className="relative">
@@ -94,30 +168,63 @@ function HangingPhoto({
         <div
           className="relative bg-line overflow-hidden"
           style={{
-            width: `calc((var(--pw) - 20px) * var(--scale, 1))`,
-            height: `calc(var(--ph) * var(--scale, 1))`,
+            width: `calc(var(--mw) * var(--scale, 1))`,
+            height: `calc(var(--mh) * var(--scale, 1))`,
           }}
         >
-          {/\.(mp4|webm|mov)$/i.test(p.src) ? (
+          {isVideo ? (
             <video
+              ref={mediaRef as RefObject<HTMLVideoElement>}
               src={p.src}
               autoPlay
               loop
               muted
               playsInline
-              preload="metadata"
-              className="absolute inset-0 w-full h-full object-cover"
+              preload="auto"
+              className={`absolute inset-0 w-full h-full ${mediaFitClass}`}
+              style={mediaStyle}
               aria-label={p.caption}
+              onLoadedMetadata={(event) =>
+                updateMediaRatio(
+                  event.currentTarget.videoWidth,
+                  event.currentTarget.videoHeight
+                )
+              }
+            />
+          ) : isGif ? (
+            <img
+              ref={mediaRef as RefObject<HTMLImageElement>}
+              src={p.src}
+              alt={p.caption}
+              decoding="async"
+              loading={i < 3 ? "eager" : "lazy"}
+              className={`absolute inset-0 w-full h-full ${mediaFitClass}`}
+              style={mediaStyle}
+              data-photowall-gif-loop="true"
+              onLoad={(event) =>
+                updateMediaRatio(
+                  event.currentTarget.naturalWidth,
+                  event.currentTarget.naturalHeight
+                )
+              }
             />
           ) : (
             <Image
+              ref={mediaRef as RefObject<HTMLImageElement>}
               src={p.src}
               alt={p.caption}
               fill
               sizes={`${p.width}px`}
-              className={p.fit === "contain" ? "object-contain" : "object-cover"}
-              style={p.imageScale ? { transform: `scale(${p.imageScale})` } : undefined}
+              loading={i < 3 ? "eager" : "lazy"}
+              className={mediaFitClass}
+              style={mediaStyle}
               unoptimized
+              onLoad={(event) =>
+                updateMediaRatio(
+                  event.currentTarget.naturalWidth,
+                  event.currentTarget.naturalHeight
+                )
+              }
             />
           )}
         </div>

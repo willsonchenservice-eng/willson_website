@@ -6,7 +6,6 @@ import PhotoWall from "@/components/PhotoWall";
 import StickyNote from "@/components/notebook/StickyNote";
 import Doodle from "@/components/notebook/Doodle";
 import InkUnderline from "@/components/notebook/InkUnderline";
-import Stamp from "@/components/notebook/Stamp";
 import type { Photo } from "@/lib/content";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -50,7 +49,7 @@ export default function Hero({ photos }: { photos: Photo[] }) {
             <p className="serif text-xl sm:text-2xl mt-6 leading-snug max-w-2xl">
               一个产品设计师、
               <InkUnderline>
-                <span className="">独立开发者</span>
+                <span>独立开发者</span>
               </InkUnderline>
               。
               <br />

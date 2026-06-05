@@ -52,7 +52,9 @@ export default function HeroTimeline({ children }: HeroTimelineProps) {
       );
     }
 
-    return () => tl.kill();
+    return () => {
+      tl.kill();
+    };
   }, []);
 
   return (
@@ -61,5 +63,3 @@ export default function HeroTimeline({ children }: HeroTimelineProps) {
     </div>
   );
 }
-
-export { greetingRef, nameRef, bioRef, stickyRef };

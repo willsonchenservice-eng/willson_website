@@ -51,7 +51,7 @@ export default function ArticleCard({
     "group block py-4 border-b border-dashed border-line last:border-0";
 
   return (
-    <Link href="/writing" className={cls}>
+    <Link href={`/writing/${post.slug}`} className={cls}>
       {inner}
     </Link>
   );

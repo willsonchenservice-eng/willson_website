@@ -86,7 +86,9 @@ export default function WorkDetailInner({ meta, content }: WorkDetailInnerProps)
       );
     }
 
-    return () => tl.kill();
+    return () => {
+      tl.kill();
+    };
   }, []);
 
   return (

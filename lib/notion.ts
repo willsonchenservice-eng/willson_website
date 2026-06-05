@@ -1,11 +1,29 @@
-import { Client } from "@notionhq/client";
+import { Client, LogLevel } from "@notionhq/client";
 import fs from "fs";
 import path from "path";
 import https from "https";
 
+function envNumber(name: string, fallback: number) {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) && value >= 0 ? value : fallback;
+}
+
+const NOTION_TIMEOUT_MS = envNumber("NOTION_TIMEOUT_MS", 3000);
+const NOTION_MAX_RETRIES = envNumber("NOTION_MAX_RETRIES", 0);
+const NOTION_IMAGE_DOWNLOAD_TIMEOUT_MS = envNumber("NOTION_IMAGE_DOWNLOAD_TIMEOUT_MS", 3000);
+
 const notion = new Client({
   auth: process.env.NOTION_API_KEY,
+  logLevel: LogLevel.ERROR,
+  timeoutMs: NOTION_TIMEOUT_MS,
+  retry: NOTION_MAX_RETRIES === 0 ? false : { maxRetries: NOTION_MAX_RETRIES },
 });
+
+function debugLog(...args: unknown[]) {
+  if (process.env.DEBUG_NOTION === "1") {
+    console.info(...args);
+  }
+}
 
 // 内存缓存，避免重复请求 Notion
 // 用 globalThis 避免热更新时缓存丢失
@@ -17,12 +35,102 @@ const getCache = () => {
       photos: null,
       beliefs: null,
       social: null,
+      dataSources: {},
       time: 0
     };
   }
   return (globalThis as any).__notionCache;
 };
 const CACHE_DURATION = 5 * 60 * 1000; // 5 分钟;
+
+function formatNotionError(error: unknown) {
+  if (error && typeof error === "object") {
+    const err = error as { code?: string; message?: string };
+    const code = err.code ? `${err.code}: ` : "";
+    return `${code}${err.message || "Unknown Notion error"}`;
+  }
+  return String(error);
+}
+
+function slugPart(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9一-龥]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 72);
+}
+
+function extensionFromFilename(filename?: string) {
+  const ext = filename?.match(/\.([a-z0-9]{2,5})(?:$|\?)/i)?.[1];
+  return ext ? ext.toLowerCase() : "png";
+}
+
+function notionFileCacheId(pageId: string, index: number, filename?: string) {
+  const base = filename?.replace(/\.[a-z0-9]{2,5}$/i, "") || `img-${index}`;
+  return `${slugPart(pageId)}-${index}-${slugPart(base) || "file"}`;
+}
+
+type ResolvedDataSource = {
+  id: string;
+  properties: Record<string, any>;
+};
+
+function findSchemaPropertyName(properties: Record<string, any>, names: string[]) {
+  for (const name of names) {
+    if (properties[name]) return name;
+  }
+  return undefined;
+}
+
+function buildStatusFilter(properties: Record<string, any>) {
+  const property = findSchemaPropertyName(properties, ["Status", "status", "状态"]);
+  if (!property) return undefined;
+
+  const type = properties[property]?.type;
+  if (type === "status") {
+    return { property, status: { equals: "完成" } };
+  }
+  if (type === "select") {
+    return { property, select: { equals: "完成" } };
+  }
+  return undefined;
+}
+
+function buildOrderSort(properties: Record<string, any>) {
+  const property = findSchemaPropertyName(properties, ["Order", "order", "排序"]);
+  if (!property) return undefined;
+
+  return [{ property, direction: "ascending" as const }];
+}
+
+async function resolveDataSource(id: string, force: boolean = false): Promise<ResolvedDataSource> {
+  const cache = getCache();
+  if (!force && cache.dataSources?.[id]) {
+    return cache.dataSources[id];
+  }
+
+  try {
+    const database = await notion.databases.retrieve({ database_id: id });
+    const dataSourceId = (database as any).data_sources?.[0]?.id;
+    if (dataSourceId) {
+      const dataSource = await notion.dataSources.retrieve({ data_source_id: dataSourceId });
+      const resolved = {
+        id: dataSourceId,
+        properties: "properties" in dataSource ? dataSource.properties : {},
+      };
+      cache.dataSources[id] = resolved;
+      return resolved;
+    }
+  } catch {}
+
+  const dataSource = await notion.dataSources.retrieve({ data_source_id: id });
+  const resolved = {
+    id,
+    properties: "properties" in dataSource ? dataSource.properties : {},
+  };
+  cache.dataSources[id] = resolved;
+  return resolved;
+}
 
 // 确保图片目录存在
 function ensureImagesDir() {
@@ -34,31 +142,37 @@ function ensureImagesDir() {
 }
 
 // 下载图片到本地
-async function downloadImage(url: string, fileId: string, force: boolean = false): Promise<string> {
+async function downloadImage(
+  url: string,
+  fileId: string,
+  force: boolean = false,
+  filenameHint?: string
+): Promise<string> {
   const imagesDir = ensureImagesDir();
 
   // 检查是否已经有这个 fileId 的图片（不关心后缀）
   const existingFiles = fs.readdirSync(imagesDir);
   const existingFile = existingFiles.find(f => f.startsWith(fileId));
   if (existingFile && !force) {
-    console.log(`Using cached image: ${existingFile} for fileId: ${fileId}`);
+    debugLog(`Using cached image: ${existingFile} for fileId: ${fileId}`);
     return `/notion-images/${existingFile}`;
   }
 
   // 如果强制刷新，删除旧文件
   if (existingFile && force) {
-    console.log(`Deleting old image: ${existingFile}`);
+    debugLog(`Deleting old image: ${existingFile}`);
     fs.unlinkSync(path.join(imagesDir, existingFile));
   }
 
-  const filename = `${fileId}.png`;
+  const filename = `${fileId}.${extensionFromFilename(filenameHint)}`;
   const localPath = path.join(imagesDir, filename);
 
-  console.log(`Downloading image: ${filename} from ${url.substring(0, 80)}...`);
+  debugLog(`Downloading image: ${filename} from ${url.substring(0, 80)}...`);
 
   return new Promise((resolve, reject) => {
-    https.get(url, (response) => {
+    const request = https.get(url, (response) => {
       if (response.statusCode !== 200) {
+        response.resume();
         reject(new Error(`Failed to download image: ${response.statusCode}`));
         return;
       }
@@ -68,7 +182,7 @@ async function downloadImage(url: string, fileId: string, force: boolean = false
 
       fileStream.on("finish", () => {
         fileStream.close();
-        console.log(`Downloaded: ${filename}`);
+        debugLog(`Downloaded: ${filename}`);
         resolve(`/notion-images/${filename}`);
       });
 
@@ -76,7 +190,14 @@ async function downloadImage(url: string, fileId: string, force: boolean = false
         fs.unlink(localPath, () => {}); // 删除可能的不完整文件
         reject(err);
       });
-    }).on("error", (err) => {
+    });
+
+    request.setTimeout(NOTION_IMAGE_DOWNLOAD_TIMEOUT_MS, () => {
+      request.destroy(new Error(`Image download timed out after ${NOTION_IMAGE_DOWNLOAD_TIMEOUT_MS}ms`));
+    });
+
+    request.on("error", (err) => {
+      fs.unlink(localPath, () => {});
       reject(err);
     });
   });
@@ -89,6 +210,7 @@ async function processNotionImages(markdown: string, force: boolean = false): Pr
   // 匹配 ![]() 格式的图片
   const imgRegex = /!\[([^\]]*)\]\(([^\)]+)\)/g;
   let match;
+  let index = 0;
   const replacements: Array<{ original: string; localUrl: string }> = [];
 
   while ((match = imgRegex.exec(markdown)) !== null) {
@@ -98,18 +220,15 @@ async function processNotionImages(markdown: string, force: boolean = false): Pr
     // 只处理 Notion 的 S3 图片链接
     if (url.includes("prod-files-secure.s3.us-west-2.amazonaws.com")) {
       try {
-        // 生成文件名：从 URL 中提取 UUID
-        const urlPath = new URL(url).pathname;
-        const parts = urlPath.split("/").filter(Boolean);
-
-        // 提取 UUID
-        let fileId: string;
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        const uuidPart = parts.find(p => uuidRegex.test(p));
-        fileId = uuidPart || `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-        const localUrl = await downloadImage(url, fileId, force);
+        const filename = decodeURIComponent(new URL(url).pathname.split("/").pop() || `img-${index}.png`);
+        const localUrl = await downloadImage(
+          url,
+          notionFileCacheId(`markdown-${index}`, index, filename),
+          force,
+          filename
+        );
         replacements.push({ original, localUrl });
+        index += 1;
       } catch (e) {
         console.warn("Failed to process image:", e);
       }
@@ -208,7 +327,7 @@ export async function fetchNotionWriting(force: boolean = false) {
     return cache.writings;
   }
 
-  console.log("Notion: Fetching from database...");
+  debugLog("Notion: Fetching from database...");
 
   try {
     const response = await notion.dataSources.query({
@@ -274,12 +393,11 @@ export async function fetchNotionWriting(force: boolean = false) {
     );
 
     cache.writings = writings;
-    cache.writings = writings;
     cache.time = now;
 
     return writings;
   } catch (error) {
-    console.error("Error fetching from Notion:", error);
+    console.warn(`Notion writing unavailable. Falling back to local MDX. ${formatNotionError(error)}`);
     return null;
   }
 }
@@ -304,7 +422,7 @@ export async function fetchNotionBeliefs(force: boolean = false) {
     return cache.beliefs;
   }
 
-  console.log("Notion: Fetching beliefs from database...");
+  debugLog("Notion: Fetching beliefs from database...");
 
   try {
     const response = await notion.dataSources.query({
@@ -348,7 +466,7 @@ export async function fetchNotionBeliefs(force: boolean = false) {
     cache.time = now;
     return beliefs;
   } catch (error) {
-    console.error("Error fetching beliefs from Notion:", error);
+    console.warn(`Notion beliefs unavailable. Falling back to local. ${formatNotionError(error)}`);
     return null;
   }
 }
@@ -366,7 +484,7 @@ export async function fetchNotionSocial(force: boolean = false) {
     return cache.social;
   }
 
-  console.log("Notion: Fetching social from database...");
+  debugLog("Notion: Fetching social from database...");
 
   try {
     const response = await notion.dataSources.query({
@@ -410,10 +528,12 @@ export async function fetchNotionSocial(force: boolean = false) {
             const file = fileProp.files[0];
             if (file.type === "file" && file.file?.url) {
               try {
-                const parts = new URL(file.file.url).pathname.split("/").filter(Boolean);
-                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-                const uuidPart = parts.find(p => uuidRegex.test(p));
-                src = await downloadImage(file.file.url, uuidPart || page.id, force);
+                src = await downloadImage(
+                  file.file.url,
+                  notionFileCacheId(page.id, 0, file.name),
+                  force,
+                  file.name
+                );
               } catch (e) {}
             } else if (file.type === "external" && file.external?.url) {
               src = file.external.url;
@@ -437,7 +557,7 @@ export async function fetchNotionSocial(force: boolean = false) {
     cache.time = now;
     return social;
   } catch (error) {
-    console.error("Error fetching social from Notion:", error);
+    console.warn(`Notion social unavailable. Falling back to local. ${formatNotionError(error)}`);
     return null;
   }
 }
@@ -455,23 +575,16 @@ export async function fetchNotionWork(force: boolean = false) {
     return cache.works;
   }
 
-  console.log("Notion: Fetching work from database...");
+  debugLog("Notion: Fetching work from database...");
 
   try {
+    const dataSource = await resolveDataSource(databaseId, force);
+    const filter = buildStatusFilter(dataSource.properties);
+    const sorts = buildOrderSort(dataSource.properties);
     const response = await notion.dataSources.query({
-      data_source_id: databaseId,
-      filter: {
-        property: "Status",
-        status: {
-          equals: "完成",
-        },
-      },
-      sorts: [
-        {
-          property: "Order",
-          direction: "ascending",
-        },
-      ],
+      data_source_id: dataSource.id,
+      ...(filter ? { filter } : {}),
+      ...(sorts ? { sorts } : {}),
     });
 
     const works = await Promise.all(
@@ -513,11 +626,7 @@ export async function fetchNotionWork(force: boolean = false) {
             if (file.type === "file" && file.file?.url) {
               try {
                 const url = file.file.url;
-                const urlObj = new URL(url);
-                const parts = urlObj.pathname.split("/").filter(Boolean);
-                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-                const uuidPart = parts.find(p => uuidRegex.test(p));
-                cover = await downloadImage(url, uuidPart || page.id, force);
+                cover = await downloadImage(url, notionFileCacheId(page.id, 0, file.name), force, file.name);
               } catch (e) {}
             } else if (file.type === "external" && file.external?.url) {
               cover = file.external.url;
@@ -552,7 +661,7 @@ export async function fetchNotionWork(force: boolean = false) {
     cache.time = now;
     return works;
   } catch (error) {
-    console.error("Error fetching work from Notion:", error);
+    console.warn(`Notion work unavailable. Falling back to local MDX. ${formatNotionError(error)}`);
     return null;
   }
 }
@@ -570,23 +679,16 @@ export async function fetchNotionPhotos(force: boolean = false) {
     return cache.photos;
   }
 
-  console.log("Notion: Fetching photos from database...");
+  debugLog("Notion: Fetching photos from database...");
 
   try {
+    const dataSource = await resolveDataSource(databaseId, force);
+    const filter = buildStatusFilter(dataSource.properties);
+    const sorts = buildOrderSort(dataSource.properties);
     const response = await notion.dataSources.query({
-      data_source_id: databaseId,
-      filter: {
-        property: "Status",
-        status: {
-          equals: "完成",
-        },
-      },
-      sorts: [
-        {
-          property: "Order",
-          direction: "ascending",
-        },
-      ],
+      data_source_id: dataSource.id,
+      ...(filter ? { filter } : {}),
+      ...(sorts ? { sorts } : {}),
     });
 
     const photos = await Promise.all(
@@ -597,19 +699,19 @@ export async function fetchNotionPhotos(force: boolean = false) {
         .map(async (page, index) => {
           const props = page.properties;
 
-          const titleProp = getProp(props, ["名称", "Name", "Title"]);
-          const fileProp = getProp(props, ["File", "文件"]);
-          const externalUrlProp = getProp(props, ["ExternalUrl", "外部链接"]);
-          const rotateProp = getProp(props, ["Rotate", "旋转"]);
-          const leftPctProp = getProp(props, ["LeftPct", "位置"]);
-          const stringHeightProp = getProp(props, ["StringHeight", "绳长"]);
+          const titleProp = getProp(props, ["名称", "Name", "Title", "Caption"]);
+          const fileProp = getProp(props, ["File", "文件", "文件和媒体", "Files & media", "Photo", "Image", "Video"]);
+          const externalUrlProp = getProp(props, ["ExternalUrl", "外部链接", "External URL"]);
+          const rotateProp = getProp(props, ["Rotate", "旋转", "Rotation"]);
+          const leftPctProp = getProp(props, ["LeftPct", "位置", "Left Percent", "Left"]);
+          const stringHeightProp = getProp(props, ["StringHeight", "绳长", "String Height"]);
           const widthProp = getProp(props, ["Width", "宽度"]);
           const heightProp = getProp(props, ["Height", "高度"]);
-          const zIndexProp = getProp(props, ["ZIndex", "层级"]);
+          const zIndexProp = getProp(props, ["ZIndex", "层级", "Z-index", "Z Index"]);
           const fitProp = getProp(props, ["Fit", "适配"]);
-          const imageScaleProp = getProp(props, ["ImageScale", "缩放"]);
-          const hideOnMobileProp = getProp(props, ["HideOnMobile", "移动端隐藏"]);
-          const linkProp = getProp(props, ["Link", "链接"]);
+          const imageScaleProp = getProp(props, ["ImageScale", "缩放", "Scale"]);
+          const hideOnMobileProp = getProp(props, ["HideOnMobile", "移动端隐藏", "Hide on Mobile"]);
+          const linkProp = getProp(props, ["Link", "链接", "URL", "External Link"]);
 
           const caption = titleProp?.title?.[0]?.plain_text || "";
 
@@ -619,10 +721,12 @@ export async function fetchNotionPhotos(force: boolean = false) {
             if (file.type === "file" && file.file?.url) {
               try {
                 const url = file.file.url;
-                const parts = new URL(url).pathname.split("/").filter(Boolean);
-                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-                const uuidPart = parts.find(p => uuidRegex.test(p));
-                src = await downloadImage(url, uuidPart || page.id, force);
+                src = await downloadImage(
+                  url,
+                  notionFileCacheId(page.id, index, file.name),
+                  force,
+                  file.name
+                );
               } catch (e) {}
             } else if (file.type === "external" && file.external?.url) {
               src = file.external.url;
@@ -653,7 +757,7 @@ export async function fetchNotionPhotos(force: boolean = false) {
     cache.time = now;
     return photos;
   } catch (error) {
-    console.error("Error fetching photos from Notion:", error);
+    console.warn(`Notion photos unavailable. Falling back to local photos. ${formatNotionError(error)}`);
     return null;
   }
 }

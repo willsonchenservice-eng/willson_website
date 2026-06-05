@@ -71,7 +71,9 @@ export default function WorkDetailReveal({ children }: WorkDetailRevealProps) {
       );
     }
 
-    return () => tl.kill();
+    return () => {
+      tl.kill();
+    };
   }, []);
 
   return (
@@ -80,5 +82,3 @@ export default function WorkDetailReveal({ children }: WorkDetailRevealProps) {
     </>
   );
 }
-
-export { backRef, titleRef, summaryRef, coverRef, contentRef, footerRef };

@@ -3,7 +3,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { getAllWork, getWork } from "@/lib/content";
 import MdxBody from "@/components/MdxBody";
-import Stamp from "@/components/notebook/Stamp";
 import PaperClip from "@/components/notebook/PaperClip";
 
 export async function generateStaticParams() {
@@ -11,7 +10,7 @@ export async function generateStaticParams() {
   return works.map((w) => ({ slug: w.slug }));
 }
 
-export const dynamicParams = true;
+export const dynamicParams = false;
 
 export async function generateMetadata({
   params,

@@ -13,7 +13,7 @@ export async function generateStaticParams() {
     .map((p) => ({ slug: p.slug }));
 }
 
-export const dynamicParams = true;
+export const dynamicParams = false;
 
 export async function generateMetadata({
   params,
@@ -44,10 +44,6 @@ export default async function WritingDetail({
 }) {
   const { slug } = await params;
   const all = await getAllWritingFull();
-
-  console.log("=== WritingDetail Debug ===");
-  console.log("Requested slug:", JSON.stringify(slug));
-  console.log("Available slugs:", all.map(p => JSON.stringify(p.slug)));
 
   const post = all.find((p) => p.slug === slug);
   if (!post) notFound();

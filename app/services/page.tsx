@@ -3,9 +3,7 @@ import Chapter from "@/components/notebook/Chapter";
 import Stamp from "@/components/notebook/Stamp";
 import WashiTape from "@/components/notebook/WashiTape";
 import PaperClip from "@/components/notebook/PaperClip";
-import InkUnderline from "@/components/notebook/InkUnderline";
 import Doodle from "@/components/notebook/Doodle";
-import HandDivider from "@/components/notebook/HandDivider";
 
 export const metadata = { title: "Services" };
 
@@ -13,7 +11,6 @@ const service = {
   title: "作品集咨询",
   tagline: "适合在准备跳槽、转岗、正在求职的同学。一对一辅导，帮你把作品集从「自我陈述」优化成「招聘方能读懂的故事」。一起做一次深度复盘：哪些项目值得写、怎么写、视觉怎么改等",
   duration: "60 分钟",
-  price: "¥¥",
   deliver: [
     "一份逐项批注的 PDF",
     "一次 60 分钟视频沟通",
@@ -65,10 +62,7 @@ export default function Services() {
             className="absolute -top-3 right-12 z-10"
           />
 
-          <div className="flex flex-wrap items-baseline justify-between gap-4 mb-3">
-            <div className="flex items-baseline gap-2 text-xs uppercase tracking-[0.22em] text-muted font-mono">
-              
-            </div>
+          <div className="flex flex-wrap items-baseline justify-end gap-4 mb-3">
             <div className="flex items-center gap-2">
               <Stamp size="sm" color="var(--foreground)" rotate={-3}>
                 {service.duration}

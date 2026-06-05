@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
-import { fetchNotionWriting, fetchNotionWork, fetchNotionPhotos, fetchNotionBeliefs, fetchNotionSocial } from "./notion";
+import { fetchNotionWriting, fetchNotionWork, fetchNotionBeliefs, fetchNotionSocial } from "./notion";
 
 export interface WorkFull extends WorkMeta {
   content: string;
@@ -69,6 +69,12 @@ export interface WritingFull extends WritingMeta {
 
 const ROOT = path.join(process.cwd(), "content");
 
+function debugLog(...args: unknown[]) {
+  if (process.env.DEBUG_NOTION === "1") {
+    console.info(...args);
+  }
+}
+
 function readCollection(name: Collection) {
   const dir = path.join(ROOT, name);
   if (!fs.existsSync(dir)) return [];
@@ -83,17 +89,14 @@ function readCollection(name: Collection) {
     });
 }
 
-export async function getAllWorkFull(): Promise<WorkFull[]> {
-  // First try to fetch from Notion
-  console.log("getAllWorkFull: Trying Notion...");
-  const notionWorks = await fetchNotionWork();
-  if (notionWorks && notionWorks.length > 0) {
-    console.log("getAllWorkFull: Using Notion data,", notionWorks.length, "works");
-    return notionWorks;
-  }
-  console.log("getAllWorkFull: Falling back to local MDX");
+function mergeBySlug<T extends { slug: string }>(localItems: T[], remoteItems: T[]) {
+  const bySlug = new Map<string, T>();
+  for (const item of localItems) bySlug.set(item.slug, item);
+  for (const item of remoteItems) bySlug.set(item.slug, item);
+  return [...bySlug.values()];
+}
 
-  // Fallback to local MDX if Notion is not configured or empty
+function readLocalWorkFull(): WorkFull[] {
   return readCollection("work")
     .map(({ slug, data, content }) => ({
       slug,
@@ -102,6 +105,35 @@ export async function getAllWorkFull(): Promise<WorkFull[]> {
     }))
     .filter((w) => !w.draft)
     .sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+}
+
+function readLocalWritingFull(): WritingFull[] {
+  return readCollection("writing")
+    .map(({ slug, data, content }) => ({
+      slug,
+      ...(data as Omit<WritingMeta, "slug">),
+      summary: data.summary || extractSummary(content),
+      content,
+    }))
+    .filter((w) => !w.draft)
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+}
+
+export async function getAllWorkFull(): Promise<WorkFull[]> {
+  const localWorks = readLocalWorkFull();
+
+  // First try to fetch from Notion
+  debugLog("getAllWorkFull: Trying Notion...");
+  const notionWorks = await fetchNotionWork();
+  if (notionWorks && notionWorks.length > 0) {
+    debugLog("getAllWorkFull: Merging Notion data,", notionWorks.length, "works");
+    return mergeBySlug(localWorks, notionWorks)
+      .filter((w) => !w.draft)
+      .sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+  }
+  debugLog("getAllWorkFull: Falling back to local MDX");
+
+  return localWorks;
 }
 
 export async function getAllWork(): Promise<WorkMeta[]> {
@@ -143,26 +175,21 @@ export async function getWriting(slug: string) {
 }
 
 export async function getAllWritingFull(): Promise<WritingFull[]> {
+  const localWritings = readLocalWritingFull();
+
   // First try to fetch from Notion
-  console.log("getAllWritingFull: Trying Notion...");
+  debugLog("getAllWritingFull: Trying Notion...");
   const notionWritings = await fetchNotionWriting();
   if (notionWritings && notionWritings.length > 0) {
-    console.log("getAllWritingFull: Using Notion data,", notionWritings.length, "posts");
-    console.log("getAllWritingFull: Posts:", notionWritings.map(p => ({ title: p.title, slug: p.slug })));
-    return notionWritings;
+    debugLog("getAllWritingFull: Merging Notion data,", notionWritings.length, "posts");
+    debugLog("getAllWritingFull: Posts:", notionWritings.map((p: WritingFull) => ({ title: p.title, slug: p.slug })));
+    return mergeBySlug(localWritings, notionWritings)
+      .filter((w) => !w.draft)
+      .sort((a, b) => (a.date < b.date ? 1 : -1));
   }
-  console.log("getAllWritingFull: Falling back to local MDX");
+  debugLog("getAllWritingFull: Falling back to local MDX");
 
-  // Fallback to local MDX if Notion is not configured or empty
-  return readCollection("writing")
-    .map(({ slug, data, content }) => ({
-      slug,
-      ...(data as Omit<WritingMeta, "slug">),
-      summary: data.summary || extractSummary(content),
-      content,
-    }))
-    .filter((w) => !w.draft)
-    .sort((a, b) => (a.date < b.date ? 1 : -1));
+  return localWritings;
 }
 
 export type Photo = {
@@ -180,62 +207,71 @@ export type Photo = {
   hideOnMobile?: boolean;
 };
 
-const localPhotos: Photo[] = [
-  {
-    src: "/wall/me-2025.mp4",
-    caption: "Me, 2025",
-    rotate: -1.5,
-    leftPct: 12,
-    stringHeight: 32,
-    width: 180,
-    height: 285,
-    zIndex: 4,
-  },
-  {
-    src: "/wall/huijian.webp",
-    caption: "回见",
-    rotate: 1.2,
-    leftPct: 82,
-    stringHeight: 68,
-    width: 220,
-    height: 220,
-    fit: "contain",
-    imageScale: 1.2,
-    zIndex: 1,
-  },
-  {
-    src: "/wall/stickers.gif",
-    caption: "表情包",
-    rotate: -0.8,
-    leftPct: 62,
-    stringHeight: 48,
-    width: 200,
-    height: 200,
-    fit: "contain",
-    zIndex: 5,
-  },
-  {
-    src: "/wall/photography.png",
-    caption: "Photography",
-    rotate: 0.6,
-    leftPct: 40,
-    stringHeight: 52,
-    width: 160,
-    height: 200,
-    zIndex: 3,
-  },
+const WALL_DIR = path.join(process.cwd(), "public", "wall");
+const supportedWallAssetPattern = /\.(?:png|jpe?g|webp|gif|mp4|webm|mov)$/i;
+
+const wallAssetMeta: Record<string, { caption: string; order: number }> = {
+  "me-2025.mp4": { caption: "Me, 2025", order: 10 },
+  "feishu_security.png": { caption: "飞书安全", order: 20 },
+  "feishu_openplatform.png": { caption: "飞书开放平台", order: 30 },
+  "beijiang.png": { caption: "北疆 Vlog", order: 40 },
+  "stickers.gif": { caption: "表情包", order: 50 },
+  "douyin-reviewer-care.png": { caption: "审核员关怀", order: 60 },
+  "douyin-review.png": { caption: "抖音审核", order: 70 },
+  "huijian.JPG": { caption: "回见", order: 80 },
+};
+
+const wallLayoutPresets: Array<Omit<Photo, "src" | "caption" | "href" | "fit" | "imageScale" | "hideOnMobile">> = [
+  { rotate: -1.5, leftPct: 9, stringHeight: 32, width: 180, height: 285, zIndex: 5 },
+  { rotate: 2.2, leftPct: 21, stringHeight: 70, width: 205, height: 168, zIndex: 2 },
+  { rotate: -1.4, leftPct: 33, stringHeight: 48, width: 210, height: 170, zIndex: 4 },
+  { rotate: 1.1, leftPct: 45, stringHeight: 82, width: 190, height: 150, zIndex: 1 },
+  { rotate: -0.8, leftPct: 56, stringHeight: 48, width: 200, height: 200, zIndex: 7 },
+  { rotate: 2.6, leftPct: 68, stringHeight: 92, width: 220, height: 168, zIndex: 3 },
+  { rotate: -2.0, leftPct: 80, stringHeight: 60, width: 210, height: 164, zIndex: 6 },
+  { rotate: 1.2, leftPct: 91, stringHeight: 76, width: 190, height: 250, zIndex: 4 },
 ];
 
-export async function getAllPhotos(): Promise<Photo[]> {
-  // First try to fetch from Notion
-  console.log("getAllPhotos: Trying Notion...");
-  const notionPhotos = await fetchNotionPhotos();
-  if (notionPhotos && notionPhotos.length > 0) {
-    console.log("getAllPhotos: Using Notion data,", notionPhotos.length, "photos");
-    return notionPhotos;
-  }
-  console.log("getAllPhotos: Falling back to local photos");
+function getWallFiles() {
+  if (!fs.existsSync(WALL_DIR)) return [];
+  return fs
+    .readdirSync(WALL_DIR)
+    .filter((file) => supportedWallAssetPattern.test(file))
+    .sort((a, b) => {
+      const orderA = wallAssetMeta[a]?.order ?? 999;
+      const orderB = wallAssetMeta[b]?.order ?? 999;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.localeCompare(b, "en");
+    });
+}
 
+function fallbackWallCaption(file: string) {
+  return file
+    .replace(/\.[^.]+$/, "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function toWallPhoto(file: string, index: number, total: number): Photo {
+  const preset = wallLayoutPresets[index % wallLayoutPresets.length];
+  const leftPct =
+    total <= wallLayoutPresets.length
+      ? preset.leftPct
+      : Math.round((8 + (84 * index) / Math.max(1, total - 1)) * 10) / 10;
+  return {
+    ...preset,
+    leftPct,
+    src: `/wall/${file}`,
+    caption: wallAssetMeta[file]?.caption ?? fallbackWallCaption(file),
+    fit: "contain",
+  };
+}
+
+const localPhotos = getWallFiles().map((file, index, files) =>
+  toWallPhoto(file, index, files.length)
+);
+
+export async function getAllPhotos(): Promise<Photo[]> {
   return localPhotos;
 }
 
@@ -253,13 +289,13 @@ const localBeliefs: Belief[] = [
 ];
 
 export async function getAllBeliefs(): Promise<Belief[]> {
-  console.log("getAllBeliefs: Trying Notion...");
+  debugLog("getAllBeliefs: Trying Notion...");
   const notionBeliefs = await fetchNotionBeliefs();
   if (notionBeliefs && notionBeliefs.length > 0) {
-    console.log("getAllBeliefs: Using Notion data,", notionBeliefs.length, "beliefs");
+    debugLog("getAllBeliefs: Using Notion data,", notionBeliefs.length, "beliefs");
     return notionBeliefs;
   }
-  console.log("getAllBeliefs: Falling back to local");
+  debugLog("getAllBeliefs: Falling back to local");
   return localBeliefs;
 }
 
@@ -273,14 +309,14 @@ export type SocialPost = {
 
 const localSocial: SocialPost[] = [
   {
-    src: "/wall/xhs-xinjiang.mp4",
+    src: "/xhs-xinjiang.mp4",
     href: "https://www.xiaohongshu.com/explore/6a0091b30000000036033144",
     postTitle: "五一逃去北疆，找回了自由的我",
     body: "五一我用相机记录自己从赛里木湖到那拉提的所见所想。",
     aspectRatio: "16 / 9",
   },
   {
-    src: "/wall/xhs-hangzhou.mp4",
+    src: "/xhs-hangzhou.mp4",
     href: "https://www.xiaohongshu.com/discovery/item/68e3f714000000000300c431",
     postTitle: "你还在公式化旅游？听听我的故事 — 杭州街溜子",
     body: "厌倦打卡式旅游？这次我没有清单、没有路线，只是在杭州的街巷里漫无目的地溜达。",
@@ -289,12 +325,12 @@ const localSocial: SocialPost[] = [
 ];
 
 export async function getAllSocial(): Promise<SocialPost[]> {
-  console.log("getAllSocial: Trying Notion...");
+  debugLog("getAllSocial: Trying Notion...");
   const notionSocial = await fetchNotionSocial();
   if (notionSocial && notionSocial.length > 0) {
-    console.log("getAllSocial: Using Notion data,", notionSocial.length, "posts");
+    debugLog("getAllSocial: Using Notion data,", notionSocial.length, "posts");
     return notionSocial;
   }
-  console.log("getAllSocial: Falling back to local");
+  debugLog("getAllSocial: Falling back to local");
   return localSocial;
 }
