@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
+    "test": "node tests/run-all.cjs",
     "start": "next start"
   },
   "dependencies": {
