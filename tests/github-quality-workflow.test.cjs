@@ -22,9 +22,10 @@ if (!fs.existsSync(workflowPath)) {
     ["contents: read", "workflow must only need read access to repository contents."],
     ["actions/checkout@v4", "workflow must check out the repository."],
     ["actions/setup-node@v4", "workflow must configure Node.js."],
-    ['node-version: "20"', "workflow must use Node.js 20."],
+    ['node-version: "22"', "workflow must use Node.js 22 to avoid deprecated runner Node/npm behavior."],
     ["cache: npm", "workflow must enable npm dependency caching."],
     ["npm ci", "workflow must install dependencies from package-lock.json."],
+    ["npm exec -- next --version", "workflow must verify the Next.js CLI exists after dependency install."],
     ["npm test", "workflow must run repository quality tests."],
     ["npm run build", "workflow must run the production build."],
   ];
