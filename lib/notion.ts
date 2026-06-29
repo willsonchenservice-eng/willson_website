@@ -36,12 +36,22 @@ const getCache = () => {
       beliefs: null,
       social: null,
       dataSources: {},
-      time: 0
+      cacheTimes: {
+        writings: 0,
+        works: 0,
+        photos: 0,
+        beliefs: 0,
+        social: 0,
+      },
     };
   }
   return (globalThis as any).__notionCache;
 };
 const CACHE_DURATION = 5 * 60 * 1000; // 5 分钟;
+
+function isCacheFresh(cache: any, key: "writings" | "works" | "photos" | "beliefs" | "social", now: number) {
+  return cache[key] && now - cache.cacheTimes[key] < CACHE_DURATION;
+}
 
 function formatNotionError(error: unknown) {
   if (error && typeof error === "object") {
@@ -101,6 +111,13 @@ function buildOrderSort(properties: Record<string, any>) {
   if (!property) return undefined;
 
   return [{ property, direction: "ascending" as const }];
+}
+
+function buildDateSort(properties: Record<string, any>) {
+  const property = findSchemaPropertyName(properties, ["date", "Date", "日期"]);
+  if (!property) return undefined;
+
+  return [{ property, direction: "descending" as const }];
 }
 
 async function resolveDataSource(id: string, force: boolean = false): Promise<ResolvedDataSource> {
@@ -206,7 +223,7 @@ async function downloadImage(
 /**
  * 处理 Notion 图片：下载到本地并替换链接
  */
-async function processNotionImages(markdown: string, force: boolean = false): Promise<string> {
+async function processNotionImages(markdown: string, pageId: string, force: boolean = false): Promise<string> {
   // 匹配 ![]() 格式的图片
   const imgRegex = /!\[([^\]]*)\]\(([^\)]+)\)/g;
   let match;
@@ -223,7 +240,7 @@ async function processNotionImages(markdown: string, force: boolean = false): Pr
         const filename = decodeURIComponent(new URL(url).pathname.split("/").pop() || `img-${index}.png`);
         const localUrl = await downloadImage(
           url,
-          notionFileCacheId(`markdown-${index}`, index, filename),
+          notionFileCacheId(pageId, index, filename),
           force,
           filename
         );
@@ -323,27 +340,20 @@ export async function fetchNotionWriting(force: boolean = false) {
 
   const now = Date.now();
   const cache = getCache();
-  if (!force && cache.writings && (now - cache.time < CACHE_DURATION)) {
+  if (!force && isCacheFresh(cache, "writings", now)) {
     return cache.writings;
   }
 
   debugLog("Notion: Fetching from database...");
 
   try {
+    const dataSource = await resolveDataSource(databaseId, force);
+    const filter = buildStatusFilter(dataSource.properties);
+    const sorts = buildDateSort(dataSource.properties);
     const response = await notion.dataSources.query({
-      data_source_id: databaseId,
-      filter: {
-        property: "Status",
-        status: {
-          equals: "完成",
-        },
-      },
-      sorts: [
-        {
-          property: "date",
-          direction: "descending",
-        },
-      ],
+      data_source_id: dataSource.id,
+      ...(filter ? { filter } : {}),
+      ...(sorts ? { sorts } : {}),
     });
 
     const writings = await Promise.all(
@@ -373,7 +383,7 @@ export async function fetchNotionWriting(force: boolean = false) {
           content = content.replace(/<br>/g, "<br/>");
           content = content.replace(/<hr>/g, "<hr/>");
           content = content.replace(/<img([^>]*)>/g, "<img$1/>");
-          content = await processNotionImages(content, force);
+          content = await processNotionImages(content, page.id, force);
           content = convertBilibiliLinks(content);
 
           const summaryFromProp = summaryProp?.rich_text?.[0]?.plain_text;
@@ -393,7 +403,7 @@ export async function fetchNotionWriting(force: boolean = false) {
     );
 
     cache.writings = writings;
-    cache.time = now;
+    cache.cacheTimes.writings = now;
 
     return writings;
   } catch (error) {
@@ -418,27 +428,20 @@ export async function fetchNotionBeliefs(force: boolean = false) {
 
   const now = Date.now();
   const cache = getCache();
-  if (!force && cache.beliefs && (now - cache.time < CACHE_DURATION)) {
+  if (!force && isCacheFresh(cache, "beliefs", now)) {
     return cache.beliefs;
   }
 
   debugLog("Notion: Fetching beliefs from database...");
 
   try {
+    const dataSource = await resolveDataSource(databaseId, force);
+    const filter = buildStatusFilter(dataSource.properties);
+    const sorts = buildOrderSort(dataSource.properties);
     const response = await notion.dataSources.query({
-      data_source_id: databaseId,
-      filter: {
-        property: "Status",
-        status: {
-          equals: "完成",
-        },
-      },
-      sorts: [
-        {
-          property: "Order",
-          direction: "ascending",
-        },
-      ],
+      data_source_id: dataSource.id,
+      ...(filter ? { filter } : {}),
+      ...(sorts ? { sorts } : {}),
     });
 
     const beliefs = response.results
@@ -463,7 +466,7 @@ export async function fetchNotionBeliefs(force: boolean = false) {
       });
 
     cache.beliefs = beliefs;
-    cache.time = now;
+    cache.cacheTimes.beliefs = now;
     return beliefs;
   } catch (error) {
     console.warn(`Notion beliefs unavailable. Falling back to local. ${formatNotionError(error)}`);
@@ -480,27 +483,20 @@ export async function fetchNotionSocial(force: boolean = false) {
 
   const now = Date.now();
   const cache = getCache();
-  if (!force && cache.social && (now - cache.time < CACHE_DURATION)) {
+  if (!force && isCacheFresh(cache, "social", now)) {
     return cache.social;
   }
 
   debugLog("Notion: Fetching social from database...");
 
   try {
+    const dataSource = await resolveDataSource(databaseId, force);
+    const filter = buildStatusFilter(dataSource.properties);
+    const sorts = buildOrderSort(dataSource.properties);
     const response = await notion.dataSources.query({
-      data_source_id: databaseId,
-      filter: {
-        property: "Status",
-        status: {
-          equals: "完成",
-        },
-      },
-      sorts: [
-        {
-          property: "Order",
-          direction: "ascending",
-        },
-      ],
+      data_source_id: dataSource.id,
+      ...(filter ? { filter } : {}),
+      ...(sorts ? { sorts } : {}),
     });
 
     const social = await Promise.all(
@@ -554,7 +550,7 @@ export async function fetchNotionSocial(force: boolean = false) {
     );
 
     cache.social = social;
-    cache.time = now;
+    cache.cacheTimes.social = now;
     return social;
   } catch (error) {
     console.warn(`Notion social unavailable. Falling back to local. ${formatNotionError(error)}`);
@@ -571,7 +567,7 @@ export async function fetchNotionWork(force: boolean = false) {
 
   const now = Date.now();
   const cache = getCache();
-  if (!force && cache.works && (now - cache.time < CACHE_DURATION)) {
+  if (!force && isCacheFresh(cache, "works", now)) {
     return cache.works;
   }
 
@@ -638,7 +634,7 @@ export async function fetchNotionWork(force: boolean = false) {
           content = content.replace(/<br>/g, "<br/>");
           content = content.replace(/<hr>/g, "<hr/>");
           content = content.replace(/<img([^>]*)>/g, "<img$1/>");
-          content = await processNotionImages(content, force);
+          content = await processNotionImages(content, page.id, force);
 
           return {
             slug,
@@ -658,7 +654,7 @@ export async function fetchNotionWork(force: boolean = false) {
     );
 
     cache.works = works;
-    cache.time = now;
+    cache.cacheTimes.works = now;
     return works;
   } catch (error) {
     console.warn(`Notion work unavailable. Falling back to local MDX. ${formatNotionError(error)}`);
@@ -675,7 +671,7 @@ export async function fetchNotionPhotos(force: boolean = false) {
 
   const now = Date.now();
   const cache = getCache();
-  if (!force && cache.photos && (now - cache.time < CACHE_DURATION)) {
+  if (!force && isCacheFresh(cache, "photos", now)) {
     return cache.photos;
   }
 
@@ -754,7 +750,7 @@ export async function fetchNotionPhotos(force: boolean = false) {
     );
 
     cache.photos = photos;
-    cache.time = now;
+    cache.cacheTimes.photos = now;
     return photos;
   } catch (error) {
     console.warn(`Notion photos unavailable. Falling back to local photos. ${formatNotionError(error)}`);
