@@ -5,8 +5,10 @@ const root = process.cwd();
 const mdxBodyPath = path.join(root, "components", "MdxBody.tsx");
 const mdxImagePath = path.join(root, "components", "mdx", "MdxImage.tsx");
 const mdxUtilPath = path.join(root, "lib", "mdx.ts");
+const globalsPath = path.join(root, "app", "globals.css");
 
 const mdxBody = fs.readFileSync(mdxBodyPath, "utf8");
+const globals = fs.readFileSync(globalsPath, "utf8");
 
 let failed = false;
 
@@ -84,8 +86,13 @@ if (fs.existsSync(mdxUtilPath)) {
 
   if (typeof normalizeMdxSource === "function") {
     expect(
-      normalizeMdxSource("**流程统一：**\n正文") === "### 流程统一：\n正文",
-      "Standalone bold full-width colon labels must become h3 Markdown."
+      normalizeMdxSource("**流程统一：**正文") === "**流程统一：**正文",
+      "Paragraph-leading bold labels must keep Markdown strong semantics instead of becoming headings."
+    );
+
+    expect(
+      normalizeMdxSource("**流程统一：**\n正文") === "**流程统一：**\n正文",
+      "Standalone bold labels must keep Markdown strong semantics instead of becoming headings."
     );
 
     expect(
@@ -97,8 +104,20 @@ if (fs.existsSync(mdxUtilPath)) {
       normalizeMdxSource("- **流程统一：** 列表项") === "- **流程统一：** 列表项",
       "Bold labels inside list items must remain list content."
     );
+
+    expect(
+      normalizeMdxSource('<span color="orange">**流程统一：**正文</span>') ===
+        "**流程统一：**正文",
+      "Notion color spans containing Markdown strong must be unwrapped so MDX can parse the Markdown emphasis."
+    );
   }
 }
+
+expect(
+  /\.prose-mdx\s+strong\s*,\s*\n\.prose-journal\s+strong\s*\{[\s\S]*font-weight:\s*700/.test(globals) ||
+    /\.prose-journal\s+strong\s*,\s*\n\.prose-mdx\s+strong\s*\{[\s\S]*font-weight:\s*700/.test(globals),
+  "Both Blog and Work prose containers must style strong text with a clearly bold weight."
+);
 
 if (failed) {
   process.exit(1);

@@ -176,6 +176,11 @@ a {
   margin-bottom: 0.5rem;
 }
 .prose-mdx p { margin: 1rem 0; }
+.prose-mdx strong,
+.prose-journal strong {
+  font-weight: 700;
+  color: var(--foreground);
+}
 .prose-mdx a {
   color: var(--foreground);
   text-decoration: underline;
@@ -327,7 +332,6 @@ a {
   font-size: 1.05rem;
   line-height: 1.7;
 }
-.prose-journal strong { font-weight: 600; }
 .prose-journal em { font-style: italic; }
 .prose-journal code {
   background: var(--line);
