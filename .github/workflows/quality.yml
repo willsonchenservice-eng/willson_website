@@ -32,6 +32,27 @@ jobs:
       - name: Run quality tests
         run: npm test
 
+      - name: Verify required Notion secrets
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_WORK_DATABASE_ID: ${{ secrets.NOTION_WORK_DATABASE_ID }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+        run: |
+          missing=0
+          if [ -z "$NOTION_API_KEY" ]; then
+            echo "::error::Missing required secret: NOTION_API_KEY"
+            missing=1
+          fi
+          if [ -z "$NOTION_WORK_DATABASE_ID" ]; then
+            echo "::error::Missing required secret: NOTION_WORK_DATABASE_ID"
+            missing=1
+          fi
+          if [ -z "$NOTION_DATABASE_ID" ]; then
+            echo "::error::Missing required secret: NOTION_DATABASE_ID"
+            missing=1
+          fi
+          exit "$missing"
+
       - name: Build production site
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
