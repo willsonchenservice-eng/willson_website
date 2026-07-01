@@ -33,4 +33,9 @@ jobs:
         run: npm test
 
       - name: Build production site
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_WORK_DATABASE_ID: ${{ secrets.NOTION_WORK_DATABASE_ID }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          NOTION_TIMEOUT_MS: "15000"
         run: npm run build
