@@ -1,10 +1,13 @@
 import { MDXRemote } from "next-mdx-remote/rsc";
 import Bilibili from "@/components/mdx/Bilibili";
 import AutoLink from "@/components/mdx/AutoLink";
+import MdxImage from "@/components/mdx/MdxImage";
+import { normalizeMdxSource } from "@/lib/mdx";
 
 const mdxComponents = {
   Bilibili,
   a: AutoLink,
+  img: MdxImage,
 };
 
 export default function MdxBody({
@@ -16,7 +19,7 @@ export default function MdxBody({
 }) {
   return (
     <div className={className}>
-      <MDXRemote source={source} components={mdxComponents} />
+      <MDXRemote source={normalizeMdxSource(source)} components={mdxComponents} />
     </div>
   );
 }
