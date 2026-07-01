@@ -334,7 +334,7 @@ function convertBilibiliLinks(markdown: string): string {
 export async function fetchNotionWriting(force: boolean = false) {
   const databaseId = process.env.NOTION_DATABASE_ID;
   if (!databaseId || !process.env.NOTION_API_KEY) {
-    console.warn("Missing Notion environment variables. Falling back to local MDX.");
+    console.warn("Missing Notion writing environment variables. Returning no writing entries.");
     return null;
   }
 
@@ -407,7 +407,7 @@ export async function fetchNotionWriting(force: boolean = false) {
 
     return writings;
   } catch (error) {
-    console.warn(`Notion writing unavailable. Falling back to local MDX. ${formatNotionError(error)}`);
+    console.warn(`Notion writing unavailable. Returning no writing entries. ${formatNotionError(error)}`);
     return null;
   }
 }
@@ -561,7 +561,7 @@ export async function fetchNotionSocial(force: boolean = false) {
 export async function fetchNotionWork(force: boolean = false) {
   const databaseId = process.env.NOTION_WORK_DATABASE_ID;
   if (!databaseId || !process.env.NOTION_API_KEY) {
-    console.warn("Missing Notion Work database env vars. Falling back to local MDX.");
+    console.warn("Missing Notion Work database env vars. Returning no work entries.");
     return null;
   }
 
@@ -657,7 +657,7 @@ export async function fetchNotionWork(force: boolean = false) {
     cache.cacheTimes.works = now;
     return works;
   } catch (error) {
-    console.warn(`Notion work unavailable. Falling back to local MDX. ${formatNotionError(error)}`);
+    console.warn(`Notion work unavailable. Returning no work entries. ${formatNotionError(error)}`);
     return null;
   }
 }

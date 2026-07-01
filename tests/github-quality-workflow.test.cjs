@@ -27,7 +27,14 @@ if (!fs.existsSync(workflowPath)) {
     ["npm ci", "workflow must install dependencies from package-lock.json."],
     ["npm exec -- next --version", "workflow must verify the Next.js CLI exists after dependency install."],
     ["npm test", "workflow must run repository quality tests."],
+    ["Verify required Notion secrets", "workflow must fail fast when required Notion secrets are missing."],
+    ["Missing required secret: NOTION_API_KEY", "workflow must name missing NOTION_API_KEY directly."],
+    ["Missing required secret: NOTION_WORK_DATABASE_ID", "workflow must name missing NOTION_WORK_DATABASE_ID directly."],
+    ["Missing required secret: NOTION_DATABASE_ID", "workflow must name missing NOTION_DATABASE_ID directly."],
     ["npm run build", "workflow must run the production build."],
+    ["NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}", "production build must receive the Notion API key from secrets."],
+    ["NOTION_WORK_DATABASE_ID: ${{ secrets.NOTION_WORK_DATABASE_ID }}", "production build must receive the Notion Work database id from secrets."],
+    ["NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}", "production build must receive the Notion Writing database id from secrets."],
   ];
 
   for (const [fragment, message] of requiredFragments) {
@@ -38,8 +45,12 @@ if (!fs.existsSync(workflowPath)) {
     fail("quality workflow must not deploy or publish artifacts.");
   }
 
-  if (/secrets\./.test(source)) {
-    fail("quality workflow must not depend on repository secrets.");
+  const allowedSecrets = new Set(["NOTION_API_KEY", "NOTION_WORK_DATABASE_ID", "NOTION_DATABASE_ID"]);
+  const secretReferences = [...source.matchAll(/secrets\.([A-Z0-9_]+)/g)].map((match) => match[1]);
+  for (const secret of secretReferences) {
+    if (!allowedSecrets.has(secret)) {
+      fail(`quality workflow must not depend on unrelated repository secret ${secret}.`);
+    }
   }
 }
 
